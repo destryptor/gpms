@@ -1,8 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Date, Table, JSON, ARRAY
 from sqlalchemy.orm import relationship, declarative_base
+from werkzeug.security import generate_password_hash, check_password_hash
+from database.dbInit import db
 
-db = SQLAlchemy()
 Base = declarative_base()
 
 citizen_panchayat = Table(
@@ -15,10 +16,9 @@ citizen_panchayat = Table(
 citizen_scheme = Table(
     'citizen_benefits_from_schemes', db.Model.metadata,
     Column('citizen_id', Integer, ForeignKey('citizen.id'), primary_key=True),
-    Column('scheme_id', Integer, ForeignKey('scheme.id'), primary_key=True),  # Fixed here
+    Column('scheme_id', Integer, ForeignKey('scheme.id'), primary_key=True),
     Column('issued_at', Date, nullable=False)
 )
-
 
 family_member = Table(
     'family_member', db.Model.metadata,
@@ -28,26 +28,33 @@ family_member = Table(
 )
 
 class User(db.Model):
-    __tablename__ = 'user'
-    id = Column(Integer, primary_key=True)
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, nullable=False, unique=True)
-    role = Column(String, nullable=False)  
-    password = Column(String, nullable=False)
-    __mapper_args__ = {'polymorphic_identity': 'user', 'polymorphic_on': role}
+    role = Column(String, nullable=False)
+    password_hash = Column(String, nullable=False)
 
-class CitizenUser(User):
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
+class CitizenUser(db.Model):
     __tablename__ = 'citizen_user'
-    id = Column(Integer, ForeignKey('user.id'), primary_key=True)
-    citizen_id = Column(Integer, ForeignKey('citizen.id'))
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.id'), unique=True)
+    citizen_id = Column(Integer, ForeignKey('citizen.id'), unique=True)
+    user = relationship('User')
     citizen = relationship('Citizen', back_populates='user')
-    __mapper_args__ = {'polymorphic_identity': 'citizen'}
 
-class GovernmentMonitorUser(User):
+class GovernmentMonitorUser(db.Model):
     __tablename__ = 'government_monitor_user'
-    id = Column(Integer, ForeignKey('user.id'), primary_key=True)
-    government_monitor_id = Column(Integer, ForeignKey('government_monitor.id'))
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.id'), unique=True)
+    government_monitor_id = Column(Integer, ForeignKey('government_monitor.id'), unique=True)
+    user = relationship('User')
     government_monitor = relationship('GovernmentMonitor', back_populates='user')
-    __mapper_args__ = {'polymorphic_identity': 'government_monitor'}
 
 class GovernmentMonitor(db.Model):
     id = Column(Integer, primary_key=True)
@@ -131,6 +138,7 @@ class Service(db.Model):
     issuing_gov_id = Column(Integer, ForeignKey('government_monitor.id'))
     availing_citizen_id = Column(Integer, ForeignKey('citizen.id'))
     issuing_panchayat_id = Column(Integer, ForeignKey('panchayat.id'))
-    monitor = relationship('GovernmentMonitor', foreign_keys=[monitoring_gov_id])
-    issuer = relationship('GovernmentMonitor', foreign_keys=[issuing_gov_id])
+
+    monitor = relationship('GovernmentMonitor', foreign_keys=[monitoring_gov_id], overlaps="monitoring_services")
+    issuer = relationship('GovernmentMonitor', foreign_keys=[issuing_gov_id], overlaps="issuing_services")
     availing_citizen = relationship('Citizen', backref='services')
