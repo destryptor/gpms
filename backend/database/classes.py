@@ -81,6 +81,7 @@ class AgriculturalData(db.Model):
     area_in_hectares = Column(Integer, nullable=False)
     crops_grown = Column(ARRAY(String))
     citizen_id = Column(Integer, ForeignKey('citizen.id'))
+    address = Column(JSON, nullable=False)
 
 class Citizen(db.Model):
     id = Column(Integer, primary_key=True)

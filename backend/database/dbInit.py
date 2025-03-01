@@ -5,7 +5,7 @@ from sqlalchemy import text
 db = SQLAlchemy()
 
 def init_app(app):
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:password@localhost:5432/gpms'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://22CS30032:22CS30032@10.5.18.72:5432'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
 
