@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/AuthPage.css';
+import { useNavigate } from 'react-router-dom';
 
 const AuthPage = () => {
 	const [isLogin, setIsLogin] = useState(true);
@@ -24,6 +25,7 @@ const AuthPage = () => {
 	const [contact, setContact] = useState('');
 	const [website, setWebsite] = useState('');
 
+	const navigate = useNavigate();	
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 
@@ -63,6 +65,7 @@ const AuthPage = () => {
 			const data = await response.json();
 			if (response.ok) {
 				alert(data.message);
+				navigate('/dashboard');
 			} else {
 				alert(data.error || 'Something went wrong. Please try again.');
 			}
