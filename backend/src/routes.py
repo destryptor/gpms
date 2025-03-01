@@ -39,6 +39,9 @@ def register_routes(app):
 
         try:
             if role == 'citizen':
+                panchayat = Panchayat.query.filter_by(name=data['panchayat']).first()
+                if not panchayat:
+                    return jsonify({"error": "Invalid Panchayat name!"}), 400
                 new_citizen = Citizen(
                     name=data['name'],
                     date_of_birth=data['date_of_birth'],
@@ -65,6 +68,12 @@ def register_routes(app):
                     citizen_id=new_citizen.id
                 )
                 db.session.add(new_citizen_user)
+                 
+                new_citizen_lives_in = citizen_lives_in_panchayat.insert().values(
+                    citizen_id = new_citizen.id,
+                    panchayat_id = panchayat.id
+                )
+                db.session.execute(new_citizen_lives_in)
                 db.session.commit()
 
             elif role == 'government_monitor':
@@ -111,3 +120,11 @@ def register_routes(app):
             return jsonify({"message": "Login successful!", "user_id": user.id, "role": user.role}), 200
         else:
             return jsonify({"error": "Invalid credentials"}), 401
+    
+    @app.route('/all_panchayats', methods=['GET'])
+    def get_panchayats():
+        try:
+            panchayats = Panchayat.query.with_entities(Panchayat.name).order_by(Panchayat.name).all()
+            return jsonify([{"name": p.name} for p in panchayats])
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500

@@ -13,6 +13,13 @@ citizen_panchayat = Table(
     Column('role', String)
 )
 
+citizen_lives_in_panchayat = Table(
+    'citizen_lives_in_panchayat', db.Model.metadata,
+    Column('citizen_id', Integer, ForeignKey('citizen.id'), primary_key=True, unique=True),
+    Column('panchayat_id', Integer, ForeignKey('panchayat.id'), primary_key=True)
+)
+
+
 citizen_scheme = Table(
     'citizen_benefits_from_schemes', db.Model.metadata,
     Column('citizen_id', Integer, ForeignKey('citizen.id'), primary_key=True),
@@ -90,9 +97,10 @@ class Citizen(db.Model):
     occupation = Column(String)
     qualification = Column(String)
     address = Column(JSON, nullable=False)
-    phone_number = Column(ARRAY(String))
+    phone_number = Column(String)
     income = Column(Integer)
     panchayats = relationship('Panchayat', secondary=citizen_panchayat, back_populates='members')
+    residency_panchayat = relationship('Panchayat',secondary=citizen_lives_in_panchayat,back_populates='residents')
     schemes = relationship('Scheme', secondary=citizen_scheme, back_populates='beneficiaries')
     family_members = relationship('Citizen', secondary=family_member, primaryjoin=id==family_member.c.citizen_id_first, secondaryjoin=id==family_member.c.citizen_id_second, back_populates='family_members')
     agricultural_data = relationship('AgriculturalData', backref='owner')
@@ -101,11 +109,13 @@ class Citizen(db.Model):
 
 class Panchayat(db.Model):
     id = Column(Integer, primary_key=True)
+    name = Column(String,nullable=False)
     address = Column(JSON, nullable=False)
     income = Column(Integer, nullable=False)
     expenditure = Column(Integer, nullable=False)
     environmental_data = Column(JSON)
     members = relationship('Citizen', secondary=citizen_panchayat, back_populates='panchayats')
+    residents = relationship('Citizen',secondary=citizen_lives_in_panchayat,back_populates='residency_panchayat')
     assets = relationship('Asset', backref='panchayat')
     services = relationship('Service', foreign_keys='Service.issuing_panchayat_id')
 
