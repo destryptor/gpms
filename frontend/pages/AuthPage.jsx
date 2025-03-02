@@ -85,6 +85,7 @@ const AuthPage = () => {
 				  localStorage.setItem("Role", data.role);
 				}
 				localStorage.setItem("Username", username);
+        localStorage.setItem("Userid", data.id);  
 				alert(data.message);
 				navigate("/dashboard/agricultural_data");
 			} else {

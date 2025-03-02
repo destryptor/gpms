@@ -7,6 +7,9 @@ export default function Citizen() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+    const [visitorrole, setVisitorrole] = useState(localStorage.getItem("Role"));
+    const [visitorid, setVisitorid] = useState(localStorage.getItem("Userid"));
+    const [visitorpanchayat, setVisitorpanchayat] = useState('');
   const [newCitizen, setNewCitizen] = useState({
     id: null,
     name: '',
@@ -19,12 +22,28 @@ export default function Citizen() {
     income: ''
   });
 
+    useEffect(() => {
+      if(visitorrole === 'panchayat'){
+        fetch(`http://localhost:5000/fetch_panchayat_by_member/${visitorid}`)
+          .then((res) => res.json())
+          .then((data) => {
+            setVisitorpanchayat(data.panchayat_id);
+          })
+          .catch((error) => {
+            console.error("Error fetching panchayat data:", error);
+          });
+      }
+    }, [visitorrole]);
+
   useEffect(() => {
     // Fetch data from the backend API endpoint
     fetch('http://localhost:5000/fetch_citizen_data')
       .then((res) => res.json())
       .then((data) => {
         setCitizenData(data);
+        if(visitorrole === 'panchayat'){
+          setCitizenData(data.filter(item => item.panchayat_id === visitorpanchayat));
+        }
         setLoading(false);
       })
       .catch((error) => {
@@ -32,7 +51,7 @@ export default function Citizen() {
         toast.error('Error fetching citizen data!');
         setLoading(false);
       });
-  }, []);
+  }, [visitorrole, visitorpanchayat]);
 
   const openModal = (isEdit = false, data = null) => {
     setIsEditMode(isEdit);
@@ -194,12 +213,15 @@ export default function Citizen() {
             Citizens Data
           </span>
         </div>
-        <button
+        {visitorrole !== 'panchayat' && (
+          <button
           className="py-2 px-4 bg-[#000000] font-medium text-sm text-white rounded-lg cursor-pointer"
           onClick={() => openModal(false)}
-        >
+          >
           Add Data
         </button>
+        )
+        }
       </div>
       
       {/* Search bar */}

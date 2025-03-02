@@ -7,7 +7,9 @@ export default function Agricultural() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add"); // "add" or "update"
   const [searchTerm, setSearchTerm] = useState("");
-  const [visitorrole, setVisitorrole] = useState("");
+  const [visitorrole, setVisitorrole] = useState(localStorage.getItem("Role"));
+  const [visitorid, setVisitorid] = useState(localStorage.getItem("Userid"));
+  const [visitorpanchayat, setVisitorpanchayat] = useState('');
 
   useEffect(() => {
     localStorage.getItem("Role") && setVisitorrole(localStorage.getItem("Role"));
@@ -25,12 +27,27 @@ export default function Agricultural() {
     citizen_id: "",
     citizen_name: ""
   });
+
+
+    useEffect(() => {
+      if(visitorrole === 'panchayat'){
+        fetch(`http://localhost:5000/fetch_panchayat_by_member/${visitorid}`)
+          .then((res) => res.json())
+          .then((data) => {
+            setVisitorpanchayat(data.panchayat_id);
+          })
+          .catch((error) => {
+            console.error("Error fetching panchayat data:", error);
+          });
+      }
+    }, [visitorrole]);
+  
   
   // Fetch initial agriculture data
   useEffect(() => {
     fetchAgricultureData();
     fetchCitizenData();
-  }, []);
+  }, [visitorrole, visitorpanchayat]);
   
   const fetchAgricultureData = () => {
     setLoading(true);
@@ -39,6 +56,9 @@ export default function Agricultural() {
       .then((data) => {
         console.log(data);
         setAgricultureData(data);
+        if(visitorrole === 'panchayat'){
+          setAgricultureData(data.filter((agriculture) => agriculture.panchayat_id === visitorpanchayat));
+        }
         setLoading(false);
       })
       .catch((error) => {
@@ -213,7 +233,7 @@ export default function Agricultural() {
         </button>)
         }
       </div>
-      
+      {visitorrole !== "panchayat" && (
       <div className="mt-4 mb-4 flex flex-row justify-between items-center w-full gap-2">
         <div className="relative w-full">
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -236,6 +256,7 @@ export default function Agricultural() {
           Search
         </button>
       </div>
+      )}
       
       <div className="mt-4">
         <div className="relative overflow-x-auto sm:rounded-lg">
@@ -282,8 +303,8 @@ export default function Agricultural() {
                 </tr>
               ) : (
                 agricultureData.map((data) => (
-                  <tr key={data.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">{data.id}</td>
+                  <tr key={data.agriculture_id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">{data.agriculture_id}</td>
                     <td className="px-6 py-4">
                       {data.address
                         ? `${data.address.street}, ${data.address.city}, ${data.address.zipcode}`
