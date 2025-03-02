@@ -39,6 +39,9 @@ def register_routes(app):
 
         try:
             if role == 'citizen':
+                panchayat = Panchayat.query.filter_by(name=data['panchayat']).first()
+                if not panchayat:
+                    return jsonify({"error": "Invalid Panchayat name!"}), 400
                 new_citizen = Citizen(
                     name=data['name'],
                     date_of_birth=data['date_of_birth'],
@@ -65,6 +68,11 @@ def register_routes(app):
                     citizen_id=new_citizen.id
                 )
                 db.session.add(new_citizen_user)
+                new_citizen_lives_in = citizen_lives_in_panchayat.insert().values(
+                    citizen_id = new_citizen.id,
+                    panchayat_id = panchayat.id
+                )
+                db.session.execute(new_citizen_lives_in)
                 db.session.commit()
 
             elif role == 'government_monitor':
