@@ -153,10 +153,10 @@ def agricult_routes(app):
             print("Error:", e)
             return jsonify({'error': str(e)}), 500
     
-    @app.route('/fetch_agriculture_by_panchayat_id/<int:panchayat_id>', methods=['GET'])
-    def fetch_agriculture_by_panchayat_name(panchayat_id):
+    @app.route('/fetch_agriculture_by_panchayat_name/<string:panchayat_name>', methods=['GET'])
+    def fetch_agriculture_by_panchayat_name(panchayat_name):
         try:
-            panchayat = Panchayat.query.filter_by(id=panchayat_id).first()
+            panchayat = Panchayat.query.filter_by(name=panchayat_name).first()
 
             if not panchayat:
                 return jsonify({"error": "Panchayat not found"}), 404
@@ -266,6 +266,8 @@ def citizen_routes(app):
         except Exception as e:
             print("Error:", e)
             return jsonify({'error': str(e)}), 500
+
+    
         
 def panchayat_member_routes(app):
     @app.route('/add_citizen_panchayat', methods=['POST'])
@@ -310,4 +312,130 @@ def panchayat_member_routes(app):
         except Exception as e:
             print("Error:", e)
             return jsonify({'error': str(e)}), 500
+
+
+def scheme_routes(app):
+    @app.route('/fetch_schemes', methods=['GET'])
+    def fetch_schemes():
+        try:
+            result = (
+                db.session.query(Scheme, GovernmentMonitor)
+                .join(GovernmentMonitor, Scheme.gov_id == GovernmentMonitor.id)
+                .all()
+            )
+
+            schemes_list = [
+                {
+                    'scheme_id': sch.id,
+                    'scheme_name': sch.name,
+                    'scheme_gov_id': sch.gov_id,
+                    'scheme_description': sch.description,
+                    'government_monitor_id': gov.id,
+                    'government_monitor_name': gov.name
+                }
+                for sch, gov in result
+            ]
+
+            return jsonify(schemes_list), 200
+
+        except Exception as e:
+            print("Error:", e)
+            return jsonify({'error': str(e)}), 500
+
+    
+    @app.route('/fetch_schemes_benefit',methods=['GET'])
+    def fetch_schemes_benefit():
+        try:
+            result = (
+                    db.session.query(Scheme, Citizen)
+                    .join(citizen_scheme, citizen_scheme.c.citizen_id == Citizen.id)  # First join between Citizen and citizen_scheme
+                    .join(Scheme, Scheme.id == citizen_scheme.c.scheme_id)  # Second join between Scheme and citizen_scheme
+                    .all()
+                     )
+
+
+            result_list = [
+                {
+                    'scheme_id': sch.id,
+                    'scheme_name': sch.name,
+                    'scheme_gov_id': sch.gov_id,
+                    'scheme_description': sch.description,
+                    'citizen_id': cit.id,
+                    'citizen_name': cit.name
+                }
+                for sch, cit in result
+            ]
+
+            return jsonify(result_list), 200
+
+        except Exception as e:
+            print("Error:", e)
+            return jsonify({'error': str(e)}), 500
+
+def asset_routes(app):
+    @app.route('/fetch_assets', methods=['GET'])
+    def fetch_assets():
+        try:
+            result = db.session.query(Asset, Panchayat) \
+                .join(Panchayat, Asset.panchayat_id == Panchayat.id) \
+                .all()
+
+            result_list = [
+                {
+                    'asset_id': asset.id,
+                    'asset_name': asset.name,
+                    'asset_address': asset.address,
+                    'asset_value': asset.value,
+                    'asset_date': asset.acquisition_date,
+                    'panchayat_id': panch.id,
+                    'panchayat_name': panch.name
+                }
+                for asset, panch in result
+            ]
+
+            return jsonify(result_list), 200
+        except Exception as e:
+            print("Error:", e)
+            return jsonify({'error': str(e)}), 500
+
+def family_member_routes(app):
+    @app.route('/fetch_family_member', methods=['GET'])
+    def fetch_family_member_data():
+        try:
+            # Create explicit aliases for Citizen table
+            citizen1 = aliased(Citizen)  # Represents the main citizen
+            citizen2 = aliased(Citizen)  # Represents the family member
+
+            # Query all family relationships
+            result = db.session.query(
+                family_member.c.citizen_id_first,
+                citizen1.name.label('citizen_name'),
+                family_member.c.citizen_id_second,
+                citizen2.name.label('family_member_name'),
+                family_member.c.relationship
+            ).join(
+                citizen1, family_member.c.citizen_id_first == citizen1.id
+            ).join(
+                citizen2, family_member.c.citizen_id_second == citizen2.id
+            ).all()
+
+            # Convert result to JSON
+            data_list = [
+                {
+                    'citizen_id': row.citizen_id_first,
+                    'citizen_name': row.citizen_name,
+                    'family_member_id': row.citizen_id_second,
+                    'family_member_name': row.family_member_name,
+                    'relationship': row.relationship
+                }
+                for row in result
+            ]
+
+            return jsonify(data_list), 200
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+
+
     

@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 export default function Scheme() {
-  const [agricultureData, setAgricultureData] = useState([]);
+  const [schemes, setSchemes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Fetch data from the backend API endpoint
-    fetch('http://localhost:5000/fetch_agriculture_data')
+    fetch("http://localhost:5000/fetch_schemes")
       .then((res) => res.json())
       .then((data) => {
-        setAgricultureData(data);
+        setSchemes(data);
         setLoading(false);
       })
       .catch((error) => {
-        console.error('Error fetching agricultural data:', error);
+        console.error("Error fetching scheme data:", error);
         setLoading(false);
       });
   }, []);
@@ -23,12 +23,10 @@ export default function Scheme() {
       <div className="flex flex-row justify-between items-center">
         <div className="flex flex-row text-center justify-center space-x-2">
           <span className="text-lg font-semibold text-gray-700">
-          Scheme Data
+            Scheme Data
           </span>
         </div>
-        <button
-          className="py-2 px-4 bg-[#000000] font-medium text-sm text-white rounded-lg"
-        >
+        <button className="py-2 px-4 bg-[#000000] font-medium text-sm text-white rounded-lg">
           Add Data
         </button>
       </div>
@@ -41,51 +39,46 @@ export default function Scheme() {
                   ID
                 </th>
                 <th scope="col" className="px-6 py-3">
-                  Address
+                  Scheme Name
                 </th>
                 <th scope="col" className="px-6 py-3">
-                  Area in Hectares
+                  Scheme Description
                 </th>
                 <th scope="col" className="px-6 py-3">
-                  Crops Grown
+                  Gov. Monitor ID
                 </th>
                 <th scope="col" className="px-6 py-3">
-                  Owner ID
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Owner Name
+                  Gov. Monitor Name
                 </th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="4" className="text-center py-4">
+                  <td colSpan="5" className="text-center py-4">
                     Loading...
                   </td>
                 </tr>
-              ) : agricultureData.length === 0 ? (
+              ) : schemes.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="text-center py-4">
+                  <td colSpan="5" className="text-center py-4">
                     No data found.
                   </td>
                 </tr>
               ) : (
-                agricultureData.map((data) => (
-                  <tr key={data.id} className="cursor-pointer hover:bg-gray-50">
-                    <td className="px-6 py-4">{data.id}</td>
-                    <td className="px-6 py-4">{data.address}</td>
-                    <td className="px-6 py-4">{data.area_in_hectares}</td>
+                schemes.map((scheme) => (
+                  <tr
+                    key={scheme.scheme_id}
+                    className="cursor-pointer hover:bg-gray-50"
+                  >
+                    <td className="px-6 py-4">{scheme.scheme_id}</td>
+                    <td className="px-6 py-4">{scheme.scheme_name}</td>
+                    <td className="px-6 py-4">{scheme.scheme_description}</td>
                     <td className="px-6 py-4">
-                      {Array.isArray(data.crops_grown)
-                        ? data.crops_grown.join(', ')
-                        : data.crops_grown}
+                      {scheme.government_monitor_id}
                     </td>
-                    <td className="px-6 py-4">{data.citizen_id}</td>
                     <td className="px-6 py-4">
-                      {/* <span className='border p-1 rounded-lg' > */}
-                      {data.citizen_name}
-                      {/* </span> */}
+                      {scheme.government_monitor_name}
                     </td>
                   </tr>
                 ))
