@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useState } from "react";
 import { Link,NavLink, useNavigate } from "react-router-dom";
 
 const navItems = [
@@ -14,6 +16,23 @@ const navItems = [
     { name: "Service", to: "/dashboard/service", icon: "bxs-data" },
     { name: "Tax", to: "/dashboard/tax", icon: "bxs-data" },
     { name: "Users", to: "/dashboard/users", icon: "bxs-data" },
+];
+
+const citizenItems = [
+    { name: "Citizen", to: "/dashboard/citizen", icon: "bxs-data" },
+    { name: "Family Member", to: "/dashboard/family_member", icon: "bxs-data" },
+    { name: "Citizen Benefits From Schemes", to: "/dashboard/citizen_benefits_from_schemes", icon: "bxs-data" },
+];
+
+const panchayatItems = [
+    { name: "Panchayat", to: "/dashboard/panchayat", icon: "bxs-data" },
+    { name: "Government Monitor", to: "/dashboard/government_monitor", icon: "bxs-data" },
+    { name: "Government Monitor User", to: "/dashboard/government_monitor_user", icon: "bxs-data" },
+    { name: "Scheme", to: "/dashboard/scheme", icon: "bxs-data" },
+    { name: "Service", to: "/dashboard/service", icon: "bxs-data" },
+    { name: "Tax", to: "/dashboard/tax", icon: "bxs-data" },
+    { name: "Asset", to: "/dashboard/asset", icon: "bxs-data" },
+    { name: "Agricultural Data", to: "/dashboard/agricultural_data", icon: "bxs-data" },
 ];
 
 
@@ -36,6 +55,24 @@ const navItems = [
 // public | users                         | table | 22CS30032
 
 const Sidebar = () => {
+    const [visitorrole, setVisitorrole] = useState("citizen");
+    const [table, setTable] = useState(navItems);
+
+    useEffect(() => {
+        const role = localStorage.getItem("Role");
+        setVisitorrole(role);
+    }, []);
+
+    useEffect(() => {
+        if (visitorrole === "citizen") {
+            setTable(citizenItems);
+        } else if (visitorrole === "panchayat") {
+            setTable(panchayatItems);
+        } else {
+            setTable(navItems);
+        }
+    }, [visitorrole]);   
+
 
     return (
         <>
@@ -51,7 +88,7 @@ const Sidebar = () => {
 
                 {/* Navigation Links */}
                 <nav className="flex-1 p-2 space-y-1 overflow-auto no-scrollbar">
-                    {navItems.map((item) => (
+                    {table.map((item) => (
                         <NavLink
                             key={item.to}
                             to={item.to}
