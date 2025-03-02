@@ -101,6 +101,16 @@ def register_routes(app):
             print(e)
             db.session.rollback()
             return jsonify({"error": str(e)}), 500
+        
+    @app.route('/login', methods=['POST'])
+    def login():
+        data = request.json
+        user = User.query.filter_by(username=data['username']).first()
+
+        if user and user.check_password(data['password']):
+            return jsonify({"message": "Login successful!", "user_id": user.id, "role": user.role}), 200
+        else:
+            return jsonify({"error": "Invalid credentials"}), 401
 
 
 def agricult_routes(app):
@@ -147,6 +157,7 @@ def panchayat_routes(app):
             data_list = [
                 {
                     'id': record.id,
+                    'name': record.name,
                     'address': record.address,
                     'income': record.income,
                     'expenditure': record.expenditure,
