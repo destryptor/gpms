@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from database.dbInit import db
 from database.classes import *
 from sqlalchemy import text
+from sqlalchemy.orm import aliased
 
 
 def register_routes(app):
