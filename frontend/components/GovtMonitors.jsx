@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 export default function GovtMonitors() {
   const [agricultureData, setAgricultureData] = useState([]);
@@ -6,14 +6,14 @@ export default function GovtMonitors() {
 
   useEffect(() => {
     // Fetch data from the backend API endpoint
-    fetch('http://localhost:5000/fetch_agriculture_data')
+    fetch("http://localhost:5000/fetch_agriculture_data")
       .then((res) => res.json())
       .then((data) => {
         setAgricultureData(data);
         setLoading(false);
       })
       .catch((error) => {
-        console.error('Error fetching agricultural data:', error);
+        console.error("Error fetching agricultural data:", error);
         setLoading(false);
       });
   }, []);
@@ -23,12 +23,11 @@ export default function GovtMonitors() {
       <div className="flex flex-row justify-between items-center">
         <div className="flex flex-row text-center justify-center space-x-2">
           <span className="text-lg font-semibold text-gray-700">
-          GovtMonitors Data
+            GovtMonitors Data
           </span>
         </div>
-        <button
-          className="py-2 px-4 bg-[#000000] font-medium text-sm text-white rounded-lg"
-        >
+
+        <button className="py-2 px-4 bg-[#000000] font-medium text-sm text-white rounded-lg">
           Add Data
         </button>
       </div>
@@ -78,7 +77,7 @@ export default function GovtMonitors() {
                     <td className="px-6 py-4">{data.area_in_hectares}</td>
                     <td className="px-6 py-4">
                       {Array.isArray(data.crops_grown)
-                        ? data.crops_grown.join(', ')
+                        ? data.crops_grown.join(", ")
                         : data.crops_grown}
                     </td>
                     <td className="px-6 py-4">{data.citizen_id}</td>

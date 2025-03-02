@@ -152,6 +152,42 @@ def agricult_routes(app):
         except Exception as e:
             print("Error:", e)
             return jsonify({'error': str(e)}), 500
+    
+    @app.route('/fetch_agriculture_by_panchayat_id/<int:panchayat_id>', methods=['GET'])
+    def fetch_agriculture_by_panchayat_name(panchayat_id):
+        try:
+            panchayat = Panchayat.query.filter_by(id=panchayat_id).first()
+
+            if not panchayat:
+                return jsonify({"error": "Panchayat not found"}), 404
+
+            result = (
+                db.session.query(AgriculturalData, Citizen, Panchayat)
+                .join(Citizen, AgriculturalData.citizen_id == Citizen.id)
+                .join(citizen_lives_in_panchayat, Citizen.id == citizen_lives_in_panchayat.c.citizen_id)
+                .join(Panchayat, Panchayat.id == citizen_lives_in_panchayat.c.panchayat_id)
+                .filter(Panchayat.id == panchayat.id) 
+                .all()
+            )
+
+            data_list = [
+                {
+                    'agriculture_id': agri.id,
+                    'citizen_id': citizen.id,
+                    'citizen_name': citizen.name,
+                    'area_in_hectares': float(agri.area_in_hectares) if agri.area_in_hectares is not None else None,
+                    'crops_grown': agri.crops_grown,
+                    'address': agri.address,
+                    'panchayat_id': panchayat.id,
+                    'panchayat_name': panchayat.name
+                }
+                for agri, citizen, panchayat in result
+            ]
+
+            return jsonify(data_list), 200
+        except Exception as e:
+            print("Error:", e)
+            return jsonify({'error': str(e)}), 500
         
 #  id | address | income | expenditure | environmental_data 
 
@@ -274,3 +310,4 @@ def panchayat_member_routes(app):
         except Exception as e:
             print("Error:", e)
             return jsonify({'error': str(e)}), 500
+    
