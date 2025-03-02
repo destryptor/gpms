@@ -1,18 +1,18 @@
-import Sidebar from "../src/Components/Sidebar.jsx"
+import Sidebar from "../components/Sidebar.jsx"
 import { Routes, Route } from 'react-router-dom';
-import Agricultural from "../src/Components/Agricultural.jsx";
-import Panchayat from "../src/Components/Panchayat.jsx";
-import Citizen from "../src/Components/Citizen.jsx";
-import PanchayatMembers from "../src/Components/PanchayatMembers.jsx";
-import Assets from "../src/Components/Asset.jsx";
-import SchemeBenefits from "../src/Components/Schemebenefits.jsx";
-import FamilyMemeber from "../src/Components/FamilyMemeber.jsx";
-import GovtMonitors from "../src/Components/GovtMonitors.jsx";
-import GovtMonitorsUser from "../src/Components/GovtMonUser.jsx";
-import Scheme from "../src/Components/Scheme.jsx";
-import Services from "../src/Components/Services.jsx";
-import Tax from "../src/Components/Tax.jsx";
-import Users from "../src/Components/Users.jsx";
+import Agricultural from "../components/Agricultural.jsx";
+import Panchayat from "../components/Panchayat.jsx";
+import Citizen from "../components/Citizen.jsx";
+import PanchayatMembers from "../components/PanchayatMembers.jsx";
+import Assets from "../components/Asset.jsx";
+import SchemeBenefits from "../components/Schemebenefits.jsx";
+import FamilyMemeber from "../components/FamilyMemeber.jsx";
+import GovtMonitors from "../components/GovtMonitors.jsx";
+import GovtMonitorsUser from "../components/GovtMonUser.jsx";
+import Scheme from "../components/Scheme.jsx";
+import Services from "../components/Services.jsx";
+import Tax from "../components/Tax.jsx";
+import Users from "../components/Users.jsx";
 
 export default function Dashboard() {
     return (

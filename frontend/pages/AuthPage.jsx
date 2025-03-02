@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/AuthPage.css';
-import { useNavigate } from 'react-router-dom';
 
 const AuthPage = () => {
 	const [isLogin, setIsLogin] = useState(true);
@@ -20,12 +20,15 @@ const AuthPage = () => {
 	const [address, setAddress] = useState('');
 	const [phoneNumber, setPhoneNumber] = useState('');
 	const [income, setIncome] = useState('');
+	const [panchayat, setPanchayat] = useState('');
 
 	const [monitorType, setMonitorType] = useState('');
 	const [contact, setContact] = useState('');
 	const [website, setWebsite] = useState('');
+	const [panchayats, setPanchayats] = useState([]);
 
-	const navigate = useNavigate();	
+	const navigate = useNavigate();
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 
@@ -48,7 +51,17 @@ const AuthPage = () => {
 		const payload = { username, password, role };
 
 		if (role === 'citizen') {
-			Object.assign(payload, { name, date_of_birth: dateOfBirth, sex, occupation, qualification, address, phone_number: phoneNumber, income });
+			Object.assign(payload, {
+				name,
+				date_of_birth: dateOfBirth,
+				sex,
+				occupation,
+				qualification,
+				address,
+				phone_number: phoneNumber,
+				income,
+				panchayat,
+			});
 		} else if (role === 'government_monitor') {
 			Object.assign(payload, { name, type: monitorType, contact, website });
 		}
@@ -65,7 +78,7 @@ const AuthPage = () => {
 			const data = await response.json();
 			if (response.ok) {
 				alert(data.message);
-				navigate('/dashboard');
+				navigate("/dashboard");
 			} else {
 				alert(data.error || 'Something went wrong. Please try again.');
 			}
@@ -75,6 +88,29 @@ const AuthPage = () => {
 			setLoading(false);
 		}
 	};
+
+	useEffect(() => {
+		const fetchPanchayats = async () => {
+			try {
+				const response = await fetch('http://localhost:5000/fetch_panchayat_data');
+				const data = await response.json();
+				// select the name field from the data array
+				console.log(data);
+				let names = [];
+				data.forEach((element) => {
+					names.push(element.name);
+				});
+				// data.map(() => {
+				// 	names.push(data.name);
+				// })
+				setPanchayats(names);
+				console.log(names);
+			} catch (error) {
+				console.error('Error fetching panchayats:', error);
+			}
+		};
+		fetchPanchayats();
+	}, []);
 
 	return (
 		<div className='auth-container'>
@@ -100,7 +136,7 @@ const AuthPage = () => {
 							</label>
 						</div>
 
-						{(role === 'citizen') && (
+						{role === 'citizen' && (
 							<>
 								<input type='text' placeholder='Full Name' className='auth-input' required value={name} onChange={(e) => setName(e.target.value)} />
 								<input type='date' placeholder='Date of Birth' className='auth-input' required value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
@@ -124,6 +160,14 @@ const AuthPage = () => {
 								<input type='text' placeholder='Address' className='auth-input' required value={address} onChange={(e) => setAddress(e.target.value)} />
 								<input type='text' placeholder='Phone Number' className='auth-input' value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
 								<input type='number' placeholder='Income' className='auth-input' value={income} onChange={(e) => setIncome(e.target.value)} />
+								<select className='auth-input' required value={panchayat} onChange={(e) => setPanchayat(e.target.value)}>
+									<option value=''>Select Panchayat</option>
+									{panchayats.map((name, index) => (
+										<option key={index} value={name}>
+											{name}
+										</option>
+									))}
+								</select>
 							</>
 						)}
 
@@ -143,11 +187,14 @@ const AuthPage = () => {
 				</button>
 			</form>
 
-			<button className='auth-toggle' onClick={() => {
+			<button
+				className='auth-toggle'
+				onClick={() => {
 					setUsername('');
 					setPassword('');
-					setIsLogin(!isLogin)
-				}}>
+					setIsLogin(!isLogin);
+				}}
+			>
 				{isLogin ? "Don't have an account? Register" : 'Already have an account? Login'}
 			</button>
 		</div>
