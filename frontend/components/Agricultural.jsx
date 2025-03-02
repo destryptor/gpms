@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 export default function Agricultural() {
   const [agricultureData, setAgricultureData] = useState([]);
@@ -6,14 +6,15 @@ export default function Agricultural() {
 
   useEffect(() => {
     // Fetch data from the backend API endpoint
-    fetch('http://localhost:5000/fetch_agriculture_data')
+    fetch("http://localhost:5000/fetch_agriculture_data")
       .then((res) => res.json())
       .then((data) => {
+        console.log(data);
         setAgricultureData(data);
         setLoading(false);
       })
       .catch((error) => {
-        console.error('Error fetching agricultural data:', error);
+        console.error("Error fetching agricultural data:", error);
         setLoading(false);
       });
   }, []);
@@ -26,9 +27,7 @@ export default function Agricultural() {
             Agricultural Data
           </span>
         </div>
-        <button
-          className="py-2 px-4 bg-[#000000] font-medium text-sm text-white rounded-lg"
-        >
+        <button className="py-2 px-4 bg-[#000000] font-medium text-sm text-white rounded-lg">
           Add Data
         </button>
       </div>
@@ -74,11 +73,15 @@ export default function Agricultural() {
                 agricultureData.map((data) => (
                   <tr key={data.id} className="cursor-pointer hover:bg-gray-50">
                     <td className="px-6 py-4">{data.id}</td>
-                    <td className="px-6 py-4">{data.address}</td>
+                    <td className="px-6 py-4">
+                      {data.address
+                        ? `${data.address.street}, ${data.address.city}, ${data.address.zipcode}`
+                        : "N/A"}
+                    </td>
                     <td className="px-6 py-4">{data.area_in_hectares}</td>
                     <td className="px-6 py-4">
                       {Array.isArray(data.crops_grown)
-                        ? data.crops_grown.join(', ')
+                        ? data.crops_grown.join(", ")
                         : data.crops_grown}
                     </td>
                     <td className="px-6 py-4">{data.citizen_id}</td>
