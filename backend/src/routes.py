@@ -679,7 +679,7 @@ def panchayat_member_routes(app):
             print("Error:", e)
             return jsonify({'error': str(e)}), 500
         
-def users_route(app):
+def user_routes(app):
     @app.route('/add_user', methods=['POST'])
     def user_add_user():
         data = request.json
@@ -857,4 +857,31 @@ def family_member_routes(app):
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
-    
+        
+
+def services_route(app):
+    @app.route('/fetch_services', methods=['GET'])
+    def fetch_services():
+        try:
+            result = db.session.query(Service, Citizen) \
+                .join(Citizen, Service.availing_citizen_id == Citizen.id) \
+                .all()
+
+            result_list = [
+                {
+                    'service_id': service.id,
+                    'service_name': service.name,
+                    'service_type': service.type,
+                    'service_issued_date': service.issued_date.isoformat() if service.issued_date else None,
+                    'service_expiry_date': service.expiry_date.isoformat() if service.expiry_date else None,
+                    'service_description': service.description,
+                    'citizen_id': service.availing_citizen_id,
+                    'citizen_name': cit.name
+                }
+                for service, cit in result
+            ]
+
+            return jsonify(result_list), 200
+        except Exception as e:
+            print("Error:", e)
+            return jsonify({'error': str(e)}), 500

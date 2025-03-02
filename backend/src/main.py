@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from flask import Flask
 from database.dbInit import init_app, init_db, test_connection
-from src.routes import register_routes, agricult_routes, panchayat_routes, citizen_routes, panchayat_member_routes,family_member_routes,scheme_routes,asset_routes, user_routes
+from src.routes import register_routes, agricult_routes, panchayat_routes, citizen_routes, panchayat_member_routes,scheme_routes,asset_routes, family_member_routes, scheme_routes, services_route,scheme_routes,asset_routes, user_routes
 from flask_cors import CORS
 
 
@@ -17,10 +17,11 @@ def create_app():
     panchayat_routes(app)
     citizen_routes(app)
     panchayat_member_routes(app)
-    users_route(app)
+    user_routes(app)
     family_member_routes(app)
     scheme_routes(app)
     asset_routes(app)
+    services_route(app)
     
     CORS(app)
     
