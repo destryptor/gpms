@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 
-export default function FamilyMemeber() {
-  const [agricultureData, setAgricultureData] = useState([]);
+export default function FamilyMember() {
+  const [familyMemberData, setFamilyMemberData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Fetch data from the backend API endpoint
-    fetch('http://localhost:5000/fetch_agriculture_data')
+    fetch('http://localhost:5000/fetch_family_member')
       .then((res) => res.json())
       .then((data) => {
-        setAgricultureData(data);
+        setFamilyMemberData(data);
         setLoading(false);
       })
       .catch((error) => {
-        console.error('Error fetching agricultural data:', error);
+        console.error('Error fetching family member data:', error);
         setLoading(false);
       });
   }, []);
@@ -26,11 +26,6 @@ export default function FamilyMemeber() {
             Family Data
           </span>
         </div>
-        <button
-          className="py-2 px-4 bg-[#000000] font-medium text-sm text-white rounded-lg"
-        >
-          Add Data
-        </button>
       </div>
       <div className="mt-4">
         <div className="relative overflow-x-auto sm:rounded-lg">
@@ -38,55 +33,43 @@ export default function FamilyMemeber() {
             <thead className="text-base text-gray-700 bg-gray-50 border-b">
               <tr>
                 <th scope="col" className="px-6 py-3">
-                  ID
+                  Citizen ID
                 </th>
                 <th scope="col" className="px-6 py-3">
-                  Address
+                  Citizen Name
                 </th>
                 <th scope="col" className="px-6 py-3">
-                  Area in Hectares
+                  Family Member ID
                 </th>
                 <th scope="col" className="px-6 py-3">
-                  Crops Grown
+                  Family Member Name
                 </th>
                 <th scope="col" className="px-6 py-3">
-                  Owner ID
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Owner Name
+                  Relationship
                 </th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="4" className="text-center py-4">
+                  <td colSpan="5" className="text-center py-4">
                     Loading...
                   </td>
                 </tr>
-              ) : agricultureData.length === 0 ? (
+              ) : familyMemberData.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="text-center py-4">
+                  <td colSpan="5" className="text-center py-4">
                     No data found.
                   </td>
                 </tr>
               ) : (
-                agricultureData.map((data) => (
-                  <tr key={data.id} className="cursor-pointer hover:bg-gray-50">
-                    <td className="px-6 py-4">{data.id}</td>
-                    <td className="px-6 py-4">{data.address}</td>
-                    <td className="px-6 py-4">{data.area_in_hectares}</td>
-                    <td className="px-6 py-4">
-                      {Array.isArray(data.crops_grown)
-                        ? data.crops_grown.join(', ')
-                        : data.crops_grown}
-                    </td>
+                familyMemberData.map((data, index) => (
+                  <tr key={index} className="cursor-pointer hover:bg-gray-50">
                     <td className="px-6 py-4">{data.citizen_id}</td>
-                    <td className="px-6 py-4">
-                      {/* <span className='border p-1 rounded-lg' > */}
-                      {data.citizen_name}
-                      {/* </span> */}
-                    </td>
+                    <td className="px-6 py-4">{data.citizen_name}</td>
+                    <td className="px-6 py-4">{data.family_member_id}</td>
+                    <td className="px-6 py-4">{data.family_member_name}</td>
+                    <td className="px-6 py-4">{data.relationship}</td>
                   </tr>
                 ))
               )}
