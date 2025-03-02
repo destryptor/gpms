@@ -10,7 +10,6 @@ const navItems = [
     { name: "Citizens", to: "/dashboard/citizen", icon: "bxs-data" },
     { name: "Family Member", to: "/dashboard/family_member", icon: "bxs-data" },
     { name: "Government Monitor", to: "/dashboard/government_monitor", icon: "bxs-data" },
-    { name: "Government Monitor User", to: "/dashboard/government_monitor_user", icon: "bxs-data" },
     { name: "Panchayat", to: "/dashboard/panchayat", icon: "bxs-data" },
     { name: "Scheme", to: "/dashboard/scheme", icon: "bxs-data" },
     { name: "Service", to: "/dashboard/service", icon: "bxs-data" },
@@ -26,18 +25,14 @@ const citizenItems = [
 
 const panchayatItems = [
     { name: "Panchayat", to: "/dashboard/panchayat", icon: "bxs-data" },
-    { name: "Government Monitor", to: "/dashboard/government_monitor", icon: "bxs-data" },
-    { name: "Government Monitor User", to: "/dashboard/government_monitor_user", icon: "bxs-data" },
     { name: "Scheme", to: "/dashboard/scheme", icon: "bxs-data" },
     { name: "Service", to: "/dashboard/service", icon: "bxs-data" },
-    { name: "Tax", to: "/dashboard/tax", icon: "bxs-data" },
     { name: "Asset", to: "/dashboard/asset", icon: "bxs-data" },
     { name: "Agricultural Data", to: "/dashboard/agricultural_data", icon: "bxs-data" },
+    { name: "Citizen", to: "/dashboard/citizen", icon: "bxs-data" }
+    // { name: "Family Member", to: "/dashboard/family_member", icon: "bxs-data" }
 ];
 
-
-
-<i class='bx '></i>
 
 // public | agricultural_data             | table | 22CS30032
 // public | asset                         | table | 22CS30032
@@ -109,19 +104,7 @@ const Sidebar = () => {
 
 
                 <div className="p-4 ">
-                    <NavLink
-                        to="/dashboard/update"
-                        className={({ isActive }) =>
-                            `flex items-center px-3 py-2 rounded-md text-sm font-medium transition ${isActive
-                                ? "bg-gray-200 text-black font-semibold"
-                                : "text-gray-600 hover:bg-gray-100"
-                            }`
-                        }
-                    >
-                        <i className={`bx bxs-edit-location text-xl mr-3`}></i>
-                        Update
-                    </NavLink>
-
+             
                     <NavLink
                         to="/login"
                         className={({ isActive }) =>

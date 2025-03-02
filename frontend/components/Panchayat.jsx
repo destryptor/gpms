@@ -7,7 +7,9 @@ export default function Panchayat() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [visitorrole, setVisitorRole] = useState('');
+  const [visitorrole, setVisitorrole] = useState(localStorage.getItem("Role"));
+    const [visitorid, setVisitorid] = useState(localStorage.getItem("Userid"));
+    const [visitorpanchayat, setVisitorpanchayat] = useState('');
   const [newPanchayat, setNewPanchayat] = useState({
     id: null,
     name: '',
@@ -23,9 +25,6 @@ export default function Panchayat() {
     environmental_data: {}
   });
 
-  useEffect(() => {
-    localStorage.getItem('Role') && setVisitorRole(localStorage.getItem('Role'));
-  }, []);
   
   // State for environmental data fields
   const [envFields, setEnvFields] = useState([{ key: '', value: '' }]);
@@ -35,6 +34,21 @@ export default function Panchayat() {
       .map(([key, value]) => `${key.replace(/_/g, " ")}: ${value}`)
       .join(", ");
   };
+
+  useEffect(() => {
+    if(visitorrole === 'panchayat'){
+      fetch(`http://localhost:5000/fetch_panchayat_by_member/${visitorid}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setVisitorpanchayat(data.panchayat_id);
+        })
+        .catch((error) => {
+          console.error("Error fetching panchayat data:", error);
+        });
+    }
+  }, [visitorrole]);
+
+
   
   useEffect(() => {
     // Fetch data from the backend API endpoint
@@ -42,6 +56,9 @@ export default function Panchayat() {
       .then((res) => res.json())
       .then((data) => {
         setPanchayatData(data);
+        if(visitorrole === 'panchayat'){
+          setPanchayatData(data.filter(item => item.id === visitorpanchayat));
+        }
         console.log(data);
         setLoading(false);
       })
@@ -49,7 +66,7 @@ export default function Panchayat() {
         toast.error('Error fetching panchayat data:', error);
         setLoading(false);
       });
-  }, []);
+  }, [visitorrole, visitorpanchayat]);
 
   const openModal = (isEdit = false, data = null) => {
     setIsEditMode(isEdit);
@@ -268,7 +285,7 @@ export default function Panchayat() {
             Panchayat Data
           </span>
         </div>
-        { visitorrole !== 'citizen' &&
+        { visitorrole === 'admin' &&
         <button
           className="py-2 px-4 bg-[#000000] font-medium text-sm text-white rounded-lg cursor-pointer"
           onClick={() => openModal(false)}
@@ -279,6 +296,7 @@ export default function Panchayat() {
       </div>
       
       {/* Search bar */}
+      { visitorrole === 'admin' && (
       <div className="mt-4 mb-4">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -295,6 +313,7 @@ export default function Panchayat() {
           />
         </div>
       </div>
+      )}
 
       <div className="mt-4">
         <div className="relative overflow-x-auto sm:rounded-lg">
@@ -349,30 +368,30 @@ export default function Panchayat() {
                     <td className="px-6 py-4">{data.name}</td>
                     <td className="px-6 py-4">{data.address.village}, {data.address.street}, {data.address.district}, {data.address.state}, {data.address.pincode}</td>
                     { visitorrole !== 'citizen' &&
-                    <>
-                    <td className="px-6 py-4">{data.income}</td>
-                    <td className="px-6 py-4">{data.expenditure}</td>
-                    <td className="px-6 py-4">
-                      {formatEnvironmentalData(data.environmental_data)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => openModal(true, data)}
-                          className="font-medium text-blue-600 hover:text-blue-800 cursor-pointer"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(data.id)}
-                          className="font-medium text-red-600 hover:text-red-800 cursor-pointer"
+                      <>
+                      <td className="px-6 py-4">{data.income}</td>
+                      <td className="px-6 py-4">{data.expenditure}</td>
+                      <td className="px-6 py-4">
+                        {formatEnvironmentalData(data.environmental_data)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => openModal(true, data)}
+                            className="font-medium text-blue-600 hover:text-blue-800 cursor-pointer"
                           >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                          </>
-}
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(data.id)}
+                            className="font-medium text-red-600 hover:text-red-800 cursor-pointer"
+                            >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                            </>
+                      }
                   </tr>
                 ))
               )}
@@ -399,88 +418,92 @@ export default function Panchayat() {
             
             <form onSubmit={handleSubmit}>
               {/* Name Field */}
-              <div className="mb-4">
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={newPanchayat.name}
-                  onChange={handleChange}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  required
-                />
-              </div>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Address
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
+              {visitorrole !== 'panchayat' &&(
+                <>
+                  <div className="mb-4">
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                      Name
+                    </label>
                     <input
                       type="text"
-                      id="village"
-                      name="address.village"
-                      placeholder="Village"
-                      value={newPanchayat.address.village}
-                      onChange={handleChange}
-                      className="w-full p-2 border border-gray-300 rounded-md mb-2"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="text"
-                      id="street"
-                      name="address.street"
-                      placeholder="Street"
-                      value={newPanchayat.address.street}
-                      onChange={handleChange}
-                      className="w-full p-2 border border-gray-300 rounded-md mb-2"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="text"
-                      id="district"
-                      name="address.district"
-                      placeholder="District"
-                      value={newPanchayat.address.district}
-                      onChange={handleChange}
-                      className="w-full p-2 border border-gray-300 rounded-md mb-2"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="text"
-                      id="state"
-                      name="address.state"
-                      placeholder="State"
-                      value={newPanchayat.address.state}
-                      onChange={handleChange}
-                      className="w-full p-2 border border-gray-300 rounded-md mb-2"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="text"
-                      id="pincode"
-                      name="address.pincode"
-                      placeholder="Pincode"
-                      value={newPanchayat.address.pincode}
+                      id="name"
+                      name="name"
+                      value={newPanchayat.name}
                       onChange={handleChange}
                       className="w-full p-2 border border-gray-300 rounded-md"
                       required
                     />
                   </div>
-                </div>
-              </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Address
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <input
+                          type="text"
+                          id="village"
+                          name="address.village"
+                          placeholder="Village"
+                          value={newPanchayat.address.village}
+                          onChange={handleChange}
+                          className="w-full p-2 border border-gray-300 rounded-md mb-2"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          id="street"
+                          name="address.street"
+                          placeholder="Street"
+                          value={newPanchayat.address.street}
+                          onChange={handleChange}
+                          className="w-full p-2 border border-gray-300 rounded-md mb-2"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          id="district"
+                          name="address.district"
+                          placeholder="District"
+                          value={newPanchayat.address.district}
+                          onChange={handleChange}
+                          className="w-full p-2 border border-gray-300 rounded-md mb-2"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          id="state"
+                          name="address.state"
+                          placeholder="State"
+                          value={newPanchayat.address.state}
+                          onChange={handleChange}
+                          className="w-full p-2 border border-gray-300 rounded-md mb-2"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          id="pincode"
+                          name="address.pincode"
+                          placeholder="Pincode"
+                          value={newPanchayat.address.pincode}
+                          onChange={handleChange}
+                          className="w-full p-2 border border-gray-300 rounded-md"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
               
               <div className="mb-4">
                 <label htmlFor="income" className="block text-sm font-medium text-gray-700 mb-1">

@@ -7,6 +7,7 @@ from database.dbInit import db
 from database.classes import *
 from sqlalchemy import text
 from sqlalchemy.orm import aliased
+import datetime
 
 
 def register_routes(app):
@@ -126,28 +127,34 @@ def agricult_routes(app):
     @app.route('/fetch_agriculture_data', methods=['GET'])
     def fetch_agriculture_data():
         try:
-            data = AgriculturalData.query.all()
-            # Attach citizen name for each record
-            for record in data:
-                citizen = Citizen.query.get(record.citizen_id)
-                record.citizen_name = citizen.name if citizen else None
-
+            result = (
+                db.session.query(AgriculturalData, Citizen, Panchayat)
+                .join(Citizen, AgriculturalData.citizen_id == Citizen.id)
+                .join(citizen_lives_in_panchayat, Citizen.id == citizen_lives_in_panchayat.c.citizen_id)
+                .join(Panchayat, Panchayat.id == citizen_lives_in_panchayat.c.panchayat_id)
+                .all()
+            )
             data_list = [
                 {
-                    'id': record.id,
-                    'area_in_hectares': float(record.area_in_hectares) if record.area_in_hectares is not None else None,
-                    'crops_grown': record.crops_grown,
-                    'citizen_id': record.citizen_id,
-                    'citizen_name': record.citizen_name,
-                    'address': record.address
+                    'agriculture_id': agri.id,
+                    'citizen_id': citizen.id,
+                    'citizen_name': citizen.name,
+                    'area_in_hectares': float(agri.area_in_hectares) if agri.area_in_hectares is not None else None,
+                    'crops_grown': agri.crops_grown,
+                    'address': agri.address,
+                    'panchayat_id': panchayat.id,
+                    'panchayat_name': panchayat.name
                 }
-                for record in data
+                for agri, citizen, panchayat in result
             ]
+            
+            print(data_list)
+
             return jsonify(data_list), 200
         except Exception as e:
             print("Error:", e)
             return jsonify({'error': str(e)}), 500
-    
+        
     @app.route('/fetch_agriculture_by_panchayat_name/<string:panchayat_name>', methods=['GET'])
     def fetch_agriculture_by_panchayat_name(panchayat_name):
         try:
@@ -244,40 +251,6 @@ def agricult_routes(app):
             print("Error:", e)
             return jsonify({'error': str(e)}), 500
 
-    @app.route('/fetch_agriculture_by_panchayat_name/<string:panchayat_name>', methods=['GET'])
-    def fetch_agriculture_by_panchayat_name(panchayat_name):
-        try:
-            panchayat = Panchayat.query.filter_by(name=panchayat_name).first()
-            if not panchayat:
-                return jsonify({"error": "Panchayat not found"}), 404
-
-            result = (
-                db.session.query(AgriculturalData, Citizen, Panchayat)
-                .join(Citizen, AgriculturalData.citizen_id == Citizen.id)
-                .join(citizen_lives_in_panchayat, Citizen.id == citizen_lives_in_panchayat.c.citizen_id)
-                .join(Panchayat, Panchayat.id == citizen_lives_in_panchayat.c.panchayat_id)
-                .filter(Panchayat.id == panchayat.id) 
-                .all()
-            )
-
-            data_list = [
-                {
-                    'agriculture_id': agri.id,
-                    'citizen_id': citizen.id,
-                    'citizen_name': citizen.name,
-                    'area_in_hectares': float(agri.area_in_hectares) if agri.area_in_hectares is not None else None,
-                    'crops_grown': agri.crops_grown,
-                    'address': agri.address,
-                    'panchayat_id': panchayat.id,
-                    'panchayat_name': panchayat.name
-                }
-                for agri, citizen, panchayat in result
-            ]
-            return jsonify(data_list), 200
-        except Exception as e:
-            print("Error:", e)
-            return jsonify({'error': str(e)}), 500
-        
 
 def panchayat_routes(app):
     @app.route('/add_panchayat_data', methods=['POST'])
@@ -385,7 +358,8 @@ def citizen_routes(app):
             # Join Citizen, citizen_lives_in_panchayat, and Panchayat to fetch required fields
             results = db.session.query(
                 Citizen,
-                Panchayat.name.label('panchayat_name')
+                Panchayat.name.label('panchayat_name'),
+                Panchayat.id.label('panchayat_id')  # Add panchayat ID to the query
             ).join(
                 citizen_lives_in_panchayat, Citizen.id == citizen_lives_in_panchayat.c.citizen_id
             ).join(
@@ -393,7 +367,7 @@ def citizen_routes(app):
             ).all()
 
             data_list = []
-            for citizen, panchayat_name in results:
+            for citizen, panchayat_name, panchayat_id in results:  # Add panchayat_id to unpacking
                 data_list.append({
                     'id': citizen.id,
                     'name': citizen.name,
@@ -404,7 +378,8 @@ def citizen_routes(app):
                     'address': citizen.address,
                     'phone_number': citizen.phone_number,
                     'income': citizen.income,
-                    'panchayat_name': panchayat_name
+                    'panchayat_name': panchayat_name,
+                    'panchayat_id': panchayat_id  # Add panchayat_id to the response
                 })
             return jsonify(data_list), 200
         except Exception as e:
@@ -678,6 +653,31 @@ def panchayat_member_routes(app):
         except Exception as e:
             print("Error:", e)
             return jsonify({'error': str(e)}), 500
+    
+    @app.route('/fetch_panchayat_by_member/<int:citizen_id>', methods=['GET'])
+    def fetch_panchayat_by_member(citizen_id):
+        try:
+            
+            # Query the association table for specific citizen
+            member = db.session.query(citizen_panchayat).filter_by(citizen_id=citizen_id).first()
+            
+            if not member:
+                return jsonify({"error": "Citizen is not a member of any panchayat"}), 404
+                
+            # Get panchayat details
+            panchayat = db.session.query(Panchayat).filter_by(id=member.panchayat_id).first()
+            
+            result = {
+                'citizen_id': member.citizen_id,
+                'panchayat_id': member.panchayat_id,
+                'role': member.role,
+                'panchayat_name': panchayat.name if panchayat else "Unknown"
+            }
+            
+            return jsonify(result), 200
+        except Exception as e:
+            print("Error:", e)
+            return jsonify({'error': str(e)}), 500
         
 def user_routes(app):
     @app.route('/add_user', methods=['POST'])
@@ -737,89 +737,203 @@ def user_routes(app):
 
 
 def scheme_routes(app):
+
     @app.route('/fetch_schemes', methods=['GET'])
     def fetch_schemes():
         try:
+            # Join Scheme with GovernmentMonitor to include government monitor details
             result = (
                 db.session.query(Scheme, GovernmentMonitor)
                 .join(GovernmentMonitor, Scheme.gov_id == GovernmentMonitor.id)
                 .all()
             )
-
             schemes_list = [
                 {
                     'scheme_id': sch.id,
                     'scheme_name': sch.name,
-                    'scheme_gov_id': sch.gov_id,
                     'scheme_description': sch.description,
+                    'scheme_gov_id': sch.gov_id,
                     'government_monitor_id': gov.id,
                     'government_monitor_name': gov.name
                 }
                 for sch, gov in result
             ]
-
             return jsonify(schemes_list), 200
-
         except Exception as e:
-            print("Error:", e)
+            print("Error fetching schemes:", e)
             return jsonify({'error': str(e)}), 500
 
-    
-    @app.route('/fetch_schemes_benefit',methods=['GET'])
-    def fetch_schemes_benefit():
+    @app.route('/add_scheme', methods=['POST'])
+    def add_scheme():
         try:
-            result = (
-                    db.session.query(Scheme, Citizen)
-                    .join(citizen_scheme, citizen_scheme.c.citizen_id == Citizen.id)  # First join between Citizen and citizen_scheme
-                    .join(Scheme, Scheme.id == citizen_scheme.c.scheme_id)  # Second join between Scheme and citizen_scheme
-                    .all()
-                     )
+            data = request.get_json()
+            new_scheme = Scheme(
+                name=data.get("scheme_name"),
+                description=data.get("scheme_description"),
+                gov_id=data.get("scheme_gov_id")
+            )
+            db.session.add(new_scheme)
+            db.session.commit()
 
-
-            result_list = [
-                {
-                    'scheme_id': sch.id,
-                    'scheme_name': sch.name,
-                    'scheme_gov_id': sch.gov_id,
-                    'scheme_description': sch.description,
-                    'citizen_id': cit.id,
-                    'citizen_name': cit.name
-                }
-                for sch, cit in result
-            ]
-
-            return jsonify(result_list), 200
-
+            gov = GovernmentMonitor.query.get(new_scheme.gov_id)
+            scheme_data = {
+                'scheme_id': new_scheme.id,
+                'scheme_name': new_scheme.name,
+                'scheme_description': new_scheme.description,
+                'scheme_gov_id': new_scheme.gov_id,
+                'government_monitor_id': gov.id if gov else None,
+                'government_monitor_name': gov.name if gov else ""
+            }
+            return jsonify({'data': scheme_data}), 200
         except Exception as e:
-            print("Error:", e)
+            print("Error adding scheme:", e)
             return jsonify({'error': str(e)}), 500
+
+    @app.route('/update_scheme/<int:id>', methods=['PUT'])
+    def update_scheme(id):
+        try:
+            data = request.get_json()
+            scheme = Scheme.query.get(id)
+            if not scheme:
+                return jsonify({'error': 'Scheme not found'}), 404
+
+            scheme.name = data.get("scheme_name", scheme.name)
+            scheme.description = data.get("scheme_description", scheme.description)
+            scheme.gov_id = data.get("scheme_gov_id", scheme.gov_id)
+            db.session.commit()
+
+            gov = GovernmentMonitor.query.get(scheme.gov_id)
+            scheme_data = {
+                'scheme_id': scheme.id,
+                'scheme_name': scheme.name,
+                'scheme_description': scheme.description,
+                'scheme_gov_id': scheme.gov_id,
+                'government_monitor_id': gov.id if gov else None,
+                'government_monitor_name': gov.name if gov else ""
+            }
+            return jsonify({'data': scheme_data}), 200
+        except Exception as e:
+            print("Error updating scheme:", e)
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/delete_scheme/<int:id>', methods=['DELETE'])
+    def delete_scheme(id):
+        try:
+            scheme = Scheme.query.get(id)
+            if not scheme:
+                return jsonify({'error': 'Scheme not found'}), 404
+
+            db.session.delete(scheme)
+            db.session.commit()
+            return jsonify({'message': 'Scheme deleted successfully'}), 200
+        except Exception as e:
+            print("Error deleting scheme:", e)
+            return jsonify({'error': str(e)}), 500
+
 
 def asset_routes(app):
+
     @app.route('/fetch_assets', methods=['GET'])
     def fetch_assets():
         try:
-            result = db.session.query(Asset, Panchayat) \
-                .join(Panchayat, Asset.panchayat_id == Panchayat.id) \
+            result = (
+                db.session.query(Asset, Panchayat)
+                .join(Panchayat, Asset.panchayat_id == Panchayat.id)
                 .all()
-
-            result_list = [
+            )
+            assets_list = [
                 {
                     'asset_id': asset.id,
                     'asset_name': asset.name,
-                    'asset_address': asset.address,
+                    'asset_address': asset.address,  # Assumed to be a JSON object with keys like street, city, state
                     'asset_value': asset.value,
-                    'asset_date': asset.acquisition_date,
-                    'panchayat_id': panch.id,
-                    'panchayat_name': panch.name
+                    'asset_date': asset.acquisition_date.isoformat(),  # Convert date to string
+                    'panchayat_id': panchayat.id,
+                    'panchayat_name': panchayat.name
                 }
-                for asset, panch in result
+                for asset, panchayat in result
             ]
-
-            return jsonify(result_list), 200
+            return jsonify(assets_list), 200
         except Exception as e:
-            print("Error:", e)
+            print("Error fetching assets:", e)
             return jsonify({'error': str(e)}), 500
 
+    @app.route('/add_asset', methods=['POST'])
+    def add_asset():
+        try:
+            data = request.get_json()
+            # Parse the date if needed (assumes ISO format)
+            # acq_date = datetime.fromisoformat(data.get("asset_date"))
+            new_asset = Asset(
+                name=data.get("asset_name"),
+                address=data.get("asset_address"),
+                value=data.get("asset_value"),
+                acquisition_date=data.get("asset_date"),
+                panchayat_id=data.get("panchayat_id")
+            )
+            db.session.add(new_asset)
+            db.session.commit()
+            panchayat = Panchayat.query.get(new_asset.panchayat_id)
+            asset_data = {
+                'asset_id': new_asset.id,
+                'asset_name': new_asset.name,
+                'asset_address': new_asset.address,
+                'asset_value': new_asset.value,
+                'asset_date': new_asset.acquisition_date.isoformat(),
+                'panchayat_id': panchayat.id if panchayat else None,
+                'panchayat_name': panchayat.name if panchayat else ""
+            }
+            return jsonify({'data': asset_data}), 200
+        except Exception as e:
+            print("Error adding asset:", e)
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/update_asset/<int:id>', methods=['PUT'])
+    def update_asset(id):
+        try:
+            data = request.get_json()
+            asset = Asset.query.get(id)
+            if not asset:
+                return jsonify({'error': 'Asset not found'}), 404
+
+            asset.name = data.get("asset_name", asset.name)
+            asset.address = data.get("asset_address", asset.address)
+            asset.value = data.get("asset_value", asset.value)
+            # Update acquisition_date if provided
+            if data.get("asset_date"):
+                asset.acquisition_date = data.get("asset_date")
+            asset.panchayat_id = data.get("panchayat_id", asset.panchayat_id)
+            db.session.commit()
+            panchayat = Panchayat.query.get(asset.panchayat_id)
+            asset_data = {
+                'asset_id': asset.id,
+                'asset_name': asset.name,
+                'asset_address': asset.address,
+                'asset_value': asset.value,
+                'asset_date': asset.acquisition_date,
+                'panchayat_id': panchayat.id if panchayat else None,
+                'panchayat_name': panchayat.name if panchayat else ""
+            }
+            return jsonify({'data': asset_data}), 200
+        except Exception as e:
+            print("Error updating asset:", e)
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/delete_asset/<int:id>', methods=['DELETE'])
+    def delete_asset(id):
+        try:
+            asset = Asset.query.get(id)
+            if not asset:
+                return jsonify({'error': 'Asset not found'}), 404
+
+            db.session.delete(asset)
+            db.session.commit()
+            return jsonify({'message': 'Asset deleted successfully'}), 200
+        except Exception as e:
+            print("Error deleting asset:", e)
+            return jsonify({'error': str(e)}), 500
+        
+        
 def family_member_routes(app):
     @app.route('/fetch_family_member', methods=['GET'])
     def fetch_family_member_data():
@@ -857,31 +971,544 @@ def family_member_routes(app):
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+    
+    @app.route('/fetch_citizens', methods=['GET'])
+    def fetch_citizens():
+        try:
+            citizens = db.session.query(Citizen.id, Citizen.name).all()
+            
+            data_list = [
+                {
+                    'id': citizen.id,
+                    'name': citizen.name
+                }
+                for citizen in citizens
+            ]
+            
+            return jsonify(data_list), 200
+            
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/add_family_member', methods=['POST'])
+    def add_family_member():
+        try:
+            data = request.json
+            
+            # Validate required fields
+            if not all(key in data for key in ['citizen_id', 'family_member_id', 'relationship']):
+                return jsonify({'error': 'Missing required fields'}), 400
+            
+            citizen_id = int(data['citizen_id'])
+            family_member_id = int(data['family_member_id'])
+            relationship = data['relationship']
+            
+            # Check if both citizens exist
+            citizen = db.session.query(Citizen).get(citizen_id)
+            family_member_citizen = db.session.query(Citizen).get(family_member_id)
+            
+            if not citizen or not family_member_citizen:
+                return jsonify({'error': 'One or both citizens do not exist'}), 404
+            
+            # Check if relationship already exists
+            existing = db.session.query(family_member).filter(
+                family_member.c.citizen_id_first == citizen_id,
+                family_member.c.citizen_id_second == family_member_id
+            ).first()
+            
+            if existing:
+                return jsonify({'error': 'This relationship already exists'}), 400
+            
+            # Insert the new relationship
+            stmt = family_member.insert().values(
+                citizen_id_first=citizen_id,
+                citizen_id_second=family_member_id,
+                relationship=relationship
+            )
+            db.session.execute(stmt)
+            
+            # Create reverse relationship (if not already exists)
+            # Define mapping of reverse relationships
+            reverse_relationships = {
+                'Spouse': 'Spouse',
+                'Parent': 'Child',
+                'Child': 'Parent',
+                'Sibling': 'Sibling',
+                'Grandparent': 'Grandchild',
+                'Grandchild': 'Grandparent',
+                'In-law': 'In-law',
+                'Other': 'Other'
+            }
+            
+            reverse_relationship = reverse_relationships.get(relationship, 'Related')
+            
+            # Check if reverse relationship exists
+            existing_reverse = db.session.query(family_member).filter(
+                family_member.c.citizen_id_first == family_member_id,
+                family_member.c.citizen_id_second == citizen_id
+            ).first()
+            
+            if not existing_reverse:
+                reverse_stmt = family_member.insert().values(
+                    citizen_id_first=family_member_id,
+                    citizen_id_second=citizen_id,
+                    relationship=reverse_relationship
+                )
+                db.session.execute(reverse_stmt)
+            
+            db.session.commit()
+            
+            # Return the created relationship
+            response_data = {
+                'citizen_id': citizen_id,
+                'citizen_name': citizen.name,
+                'family_member_id': family_member_id,
+                'family_member_name': family_member_citizen.name,
+                'relationship': relationship
+            }
+            
+            return jsonify({'data': response_data, 'message': 'Family relationship added successfully'}), 201
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/update_family_member', methods=['PUT'])
+    def update_family_member():
+        try:
+            data = request.json
+            
+            # Validate required fields
+            if not all(key in data for key in ['citizen_id', 'family_member_id', 'relationship']):
+                return jsonify({'error': 'Missing required fields'}), 400
+            
+            citizen_id = int(data['citizen_id'])
+            family_member_id = int(data['family_member_id'])
+            relationship = data['relationship']
+            
+            # Check if both citizens exist
+            citizen = db.session.query(Citizen).get(citizen_id)
+            family_member_citizen = db.session.query(Citizen).get(family_member_id)
+            
+            if not citizen or not family_member_citizen:
+                return jsonify({'error': 'One or both citizens do not exist'}), 404
+            
+            # Check if relationship exists
+            existing = db.session.query(family_member).filter(
+                family_member.c.citizen_id_first == citizen_id,
+                family_member.c.citizen_id_second == family_member_id
+            ).first()
+            
+            if not existing:
+                return jsonify({'error': 'This relationship does not exist'}), 404
+            
+            # Update the relationship
+            stmt = family_member.update().where(
+                family_member.c.citizen_id_first == citizen_id,
+                family_member.c.citizen_id_second == family_member_id
+            ).values(relationship=relationship)
+            
+            db.session.execute(stmt)
+            
+            # Define mapping of reverse relationships
+            reverse_relationships = {
+                'Spouse': 'Spouse',
+                'Parent': 'Child',
+                'Child': 'Parent',
+                'Sibling': 'Sibling',
+                'Grandparent': 'Grandchild',
+                'Grandchild': 'Grandparent',
+                'In-law': 'In-law',
+                'Other': 'Other'
+            }
+            
+            reverse_relationship = reverse_relationships.get(relationship, 'Related')
+            
+            # Update the reverse relationship if it exists
+            reverse_stmt = family_member.update().where(
+                family_member.c.citizen_id_first == family_member_id,
+                family_member.c.citizen_id_second == citizen_id
+            ).values(relationship=reverse_relationship)
+            
+            db.session.execute(reverse_stmt)
+            db.session.commit()
+            
+            # Return the updated relationship
+            response_data = {
+                'citizen_id': citizen_id,
+                'citizen_name': citizen.name,
+                'family_member_id': family_member_id,
+                'family_member_name': family_member_citizen.name,
+                'relationship': relationship
+            }
+            
+            return jsonify({'data': response_data, 'message': 'Family relationship updated successfully'}), 200
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/delete_family_member', methods=['DELETE'])
+    def delete_family_member():
+        try:
+            data = request.json
+            
+            # Validate required fields
+            if not all(key in data for key in ['citizen_id', 'family_member_id']):
+                return jsonify({'error': 'Missing required fields'}), 400
+            
+            citizen_id = int(data['citizen_id'])
+            family_member_id = int(data['family_member_id'])
+            
+            # Delete the relationship
+            stmt = family_member.delete().where(
+                family_member.c.citizen_id_first == citizen_id,
+                family_member.c.citizen_id_second == family_member_id
+            )
+            result = db.session.execute(stmt)
+            
+            # Also delete the reverse relationship
+            reverse_stmt = family_member.delete().where(
+                family_member.c.citizen_id_first == family_member_id,
+                family_member.c.citizen_id_second == citizen_id
+            )
+            db.session.execute(reverse_stmt)
+            
+            db.session.commit()
+            
+            if result.rowcount == 0:
+                return jsonify({'error': 'Family relationship not found'}), 404
+                
+            return jsonify({'message': 'Family relationship deleted successfully'}), 200
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/fetch_family_members_by_citizen/<int:citizen_id>', methods=['GET'])
+    def fetch_family_members_by_citizen(citizen_id):
+        try:
+            # Fetch family members
+            family_members = db.session.query(Citizen, family_member.c.relationship).join(
+                family_member, Citizen.id == family_member.c.citizen_id_second
+            ).filter(family_member.c.citizen_id_first == citizen_id).all()
+            
+            # Convert results to JSON
+            data_list = [
+                {
+                    'citizen_id': citizen.id,
+                    'citizen_name': citizen.name,
+                    'relationship': relationship
+                }
+                for citizen, relationship in family_members
+            ]
+            
+            return jsonify(data_list), 200
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+      
+def tax_route(app):
+    @app.route('/fetch_tax_data', methods=['GET'])
+    def fetch_tax_data():
+        try:
+            tax_data = db.session.query(
+                Tax, 
+                GovernmentMonitor.name.label('monitoring_gov_name'), 
+                Citizen.name.label('paying_citizen_name')
+            ).join(
+                GovernmentMonitor, Tax.monitoring_gov_id == GovernmentMonitor.id
+            ).join(
+                Citizen, Tax.paying_citizen_id == Citizen.id
+            ).all()
+            data_list = [
+                {
+                    'id': tax.id,
+                    'name': tax.name,
+                    'amount_in_percentage': tax.amount_in_percentage,
+                    'tier': tax.tier,
+                    'monitoring_gov_id': tax.monitoring_gov_id,
+                    'monitoring_gov_name': monitoring_gov_name,
+                    'paying_citizen_id': tax.paying_citizen_id,
+                    'paying_citizen_name': paying_citizen_name
+                }
+                for tax, monitoring_gov_name, paying_citizen_name in tax_data
+            ]
+            return jsonify(data_list), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/add_tax_data', methods=['POST'])
+    def add_tax_data():
+        data = request.json
+        try:
+            new_tax = Tax(
+                name=data.get('name'),
+                amount_in_percentage=data.get('amount_in_percentage'),
+                tier=data.get('tier'),
+                monitoring_gov_id=data.get('monitoring_gov_id'),
+                paying_citizen_id=data.get('paying_citizen_id')
+            )
+            db.session.add(new_tax)
+            db.session.commit()
+            return jsonify({
+                'message': 'Tax record added successfully',
+                'data': {
+                    'id': new_tax.id,
+                    'name': new_tax.name,
+                    'amount_in_percentage': new_tax.amount_in_percentage,
+                    'tier': new_tax.tier,
+                    'monitoring_gov_id': new_tax.monitoring_gov_id,
+                    'paying_citizen_id': new_tax.paying_citizen_id
+                }
+            }), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/update_tax_data/<int:id>', methods=['PUT'])
+    def update_tax_data(id):
+        data = request.json
+        try:
+            tax_record = Tax.query.get(id)
+            if not tax_record:
+                return jsonify({'error': 'Tax record not found'}), 404
+            tax_record.name = data.get('name', tax_record.name)
+            tax_record.amount_in_percentage = data.get('amount_in_percentage', tax_record.amount_in_percentage)
+            tax_record.tier = data.get('tier', tax_record.tier)
+            tax_record.monitoring_gov_id = data.get('monitoring_gov_id', tax_record.monitoring_gov_id)
+            tax_record.paying_citizen_id = data.get('paying_citizen_id', tax_record.paying_citizen_id)
+            db.session.commit()
+            return jsonify({
+                'message': 'Tax record updated successfully',
+                'data': {
+                    'id': tax_record.id,
+                    'name': tax_record.name,
+                    'amount_in_percentage': tax_record.amount_in_percentage,
+                    'tier': tax_record.tier,
+                    'monitoring_gov_id': tax_record.monitoring_gov_id,
+                    'paying_citizen_id': tax_record.paying_citizen_id
+                }
+            }), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/delete_tax_data/<int:id>', methods=['DELETE'])
+    def delete_tax_data(id):
+        try:
+            tax_record = Tax.query.get(id)
+            if not tax_record:
+                return jsonify({'error': 'Tax record not found'}), 404
+            db.session.delete(tax_record)
+            db.session.commit()
+            return jsonify({'message': 'Tax record deleted successfully'}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+
+
+
+def government_monitors_routes(app):
+    @app.route('/fetch_government_monitors', methods=['GET'])
+    def fetch_government_monitors():
+        try:
+            monitors = GovernmentMonitor.query.all()
+            monitors_list = [
+                {
+                    'id': monitor.id,
+                    'name': monitor.name,
+                    'type': monitor.type,
+                    'contact': monitor.contact,
+                    'website': monitor.website
+                }
+                for monitor in monitors
+            ]
+            return jsonify(monitors_list), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+
+    @app.route('/add_government_monitor', methods=['POST'])
+    def add_government_monitor():
+        data = request.get_json()
+        try:
+            # Expecting "contact" as a list (the frontend converts comma-separated strings to lists)
+            new_monitor = GovernmentMonitor(
+                name=data.get('name'),
+                type=data.get('type'),
+                contact=data.get('contact'),
+                website=data.get('website')
+            )
+            db.session.add(new_monitor)
+            db.session.commit()
+            return jsonify({
+                'message': 'Government monitor added successfully',
+                'data': {
+                    'id': new_monitor.id,
+                    'name': new_monitor.name,
+                    'type': new_monitor.type,
+                    'contact': new_monitor.contact,
+                    'website': new_monitor.website
+                }
+            }), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+
+
+    @app.route('/update_government_monitor/<int:id>', methods=['PUT'])
+    def update_government_monitor(id):
+        data = request.get_json()
+        try:
+            monitor = GovernmentMonitor.query.get(id)
+            if not monitor:
+                return jsonify({'error': 'Government monitor not found'}), 404
+
+            monitor.name = data.get('name', monitor.name)
+            monitor.type = data.get('type', monitor.type)
+            monitor.contact = data.get('contact', monitor.contact)
+            monitor.website = data.get('website', monitor.website)
+            db.session.commit()
+            return jsonify({
+                'message': 'Government monitor updated successfully',
+                'data': {
+                    'id': monitor.id,
+                    'name': monitor.name,
+                    'type': monitor.type,
+                    'contact': monitor.contact,
+                    'website': monitor.website
+                }
+            }), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+
+
+    @app.route('/delete_government_monitor/<int:id>', methods=['DELETE'])
+    def delete_government_monitor(id):
+        try:
+            monitor = GovernmentMonitor.query.get(id)
+            if not monitor:
+                return jsonify({'error': 'Government monitor not found'}), 404
+            db.session.delete(monitor)
+            db.session.commit()
+            return jsonify({'message': 'Government monitor deleted successfully'}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
         
 
+
+
 def services_route(app):
+
     @app.route('/fetch_services', methods=['GET'])
     def fetch_services():
         try:
-            result = db.session.query(Service, Citizen) \
-                .join(Citizen, Service.availing_citizen_id == Citizen.id) \
+            # Join Service with Citizen and citizen_lives_in_panchayat to get citizen and panchayat details
+            result = (
+                db.session.query(Service, Citizen, Panchayat)
+                .join(Citizen, Service.availing_citizen_id == Citizen.id)
+                .join(citizen_lives_in_panchayat, Citizen.id == citizen_lives_in_panchayat.c.citizen_id)
+                .join(Panchayat, Panchayat.id == citizen_lives_in_panchayat.c.panchayat_id)
                 .all()
-
-            result_list = [
+            )
+            
+            services_list = [
                 {
-                    'service_id': service.id,
-                    'service_name': service.name,
-                    'service_type': service.type,
-                    'service_issued_date': service.issued_date.isoformat() if service.issued_date else None,
-                    'service_expiry_date': service.expiry_date.isoformat() if service.expiry_date else None,
-                    'service_description': service.description,
-                    'citizen_id': service.availing_citizen_id,
-                    'citizen_name': cit.name
+                    'service_id': srv.id,
+                    'service_name': srv.name,
+                    'service_type': srv.type,
+                    'service_issued_date': srv.issued_date.isoformat(),
+                    'service_expiry_date': srv.expiry_date.isoformat() if srv.expiry_date else None,
+                    'citizen_id': cit.id,
+                    'citizen_name': cit.name,
+                    'panchayat_id': panchayat.id,
+                    'panchayat_name': panchayat.name
                 }
-                for service, cit in result
+                for srv, cit, panchayat in result
             ]
-
-            return jsonify(result_list), 200
+            return jsonify(services_list), 200
         except Exception as e:
-            print("Error:", e)
+            print("Error fetching services:", e)
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/add_service', methods=['POST'])
+    def add_service():
+        try:
+            data = request.get_json()
+            issued_date = data.get("service_issued_date")
+            expiry_date = data.get("service_expiry_date") if data.get("service_expiry_date") else None
+
+            new_service = Service(
+                name=data.get("service_name"),
+                type=data.get("service_type"),
+                issued_date=issued_date,
+                expiry_date=expiry_date,
+                availing_citizen_id=data.get("availing_citizen_id")
+            )
+            db.session.add(new_service)
+            db.session.commit()
+
+            # Retrieve citizen details
+            citizen = Citizen.query.get(new_service.availing_citizen_id)
+            service_data = {
+                'service_id': new_service.id,
+                'service_name': new_service.name,
+                'service_type': new_service.type,
+                'service_issued_date': new_service.issued_date.isoformat(),
+                'service_expiry_date': new_service.expiry_date.isoformat() if new_service.expiry_date else None,
+                'citizen_id': citizen.id if citizen else None,
+                'citizen_name': citizen.name if citizen else ""
+            }
+            return jsonify({'data': service_data}), 200
+        except Exception as e:
+            print("Error adding service:", e)
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/update_service/<int:id>', methods=['PUT'])
+    def update_service(id):
+        try:
+            data = request.get_json()
+            service = Service.query.get(id)
+            if not service:
+                return jsonify({'error': 'Service not found'}), 404
+
+            service.name = data.get("service_name", service.name)
+            service.type = data.get("service_type", service.type)
+            if data.get("service_issued_date"):
+                service.issued_date = data.get("service_issued_date")
+            if data.get("service_expiry_date"):
+                service.expiry_date = data.get("service_expiry_date")
+            service.availing_citizen_id = data.get("availing_citizen_id", service.availing_citizen_id)
+            db.session.commit()
+
+            citizen = Citizen.query.get(service.availing_citizen_id)
+            service_data = {
+                'service_id': service.id,
+                'service_name': service.name,
+                'service_type': service.type,
+                'service_issued_date': service.issued_date.isoformat(),
+                'service_expiry_date': service.expiry_date.isoformat() if service.expiry_date else None,
+                'citizen_id': citizen.id if citizen else None,
+                'citizen_name': citizen.name if citizen else ""
+            }
+            return jsonify({'data': service_data}), 200
+        except Exception as e:
+            print("Error updating service:", e)
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/delete_service/<int:id>', methods=['DELETE'])
+    def delete_service(id):
+        try:
+            service = Service.query.get(id)
+            if not service:
+                return jsonify({'error': 'Service not found'}), 404
+
+            db.session.delete(service)
+            db.session.commit()
+            return jsonify({'message': 'Service deleted successfully'}), 200
+        except Exception as e:
+            print("Error deleting service:", e)
             return jsonify({'error': str(e)}), 500
