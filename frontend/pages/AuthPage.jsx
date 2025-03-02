@@ -5,136 +5,164 @@ import "react-toastify/dist/ReactToastify.css";
 import "../styles/AuthPage.css";
 
 const AuthPage = () => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("");
+  const [loading, setLoading] = useState(false);
 
-	const [isLogin, setIsLogin] = useState(true);
-	const [username, setUsername] = useState('');
-	const [password, setPassword] = useState('');
-	const [confirmPassword, setConfirmPassword] = useState('');
-	const [role, setRole] = useState('');
-	const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [sex, setSex] = useState("");
+  const [occupation, setOccupation] = useState("");
+  const [qualification, setQualification] = useState("");
+  const [address, setAddress] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [income, setIncome] = useState("");
+  const [panchayat, setPanchayat] = useState("");
 
-	const [name, setName] = useState('');
-	const [dateOfBirth, setDateOfBirth] = useState('');
-	const [sex, setSex] = useState('');
-	const [occupation, setOccupation] = useState('');
-	const [qualification, setQualification] = useState('');
-	const [address, setAddress] = useState('');
-	const [phoneNumber, setPhoneNumber] = useState('');
-	const [income, setIncome] = useState('');
-	const [panchayat, setPanchayat] = useState('');
+  const [monitorType, setMonitorType] = useState("");
+  const [contact, setContact] = useState("");
+  const [website, setWebsite] = useState("");
+  const [panchayats, setPanchayats] = useState([]);
 
-	const [monitorType, setMonitorType] = useState('');
-	const [contact, setContact] = useState('');
-	const [website, setWebsite] = useState('');
-	const [panchayats, setPanchayats] = useState([]);
+  const navigate = useNavigate();
 
-	const navigate = useNavigate();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-	const handleSubmit = async (e) => {
-		e.preventDefault();
+    if (!username.trim() || !password.trim()) {
+      alert("Username and password are required!");
+      return;
+    }
 
-		if (!username.trim() || !password.trim()) {
-			alert('Username and password are required!');
-			return;
-		}
+    if (!isLogin && !role) {
+      alert("Please select a role!");
+      return;
+    }
 
-		if (!isLogin && !role) {
-			alert('Please select a role!');
-			return;
-		}
+    if (!isLogin && password !== confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
 
-		if (!isLogin && password !== confirmPassword) {
-			alert('Passwords do not match!');
-			return;
-		}
+    const endpoint = isLogin ? "/login" : "/register";
+    const payload = { username, password, role };
 
-		const endpoint = isLogin ? '/login' : '/register';
-		const payload = { username, password, role };
+    if (role === "citizen") {
+      Object.assign(payload, {
+        name,
+        date_of_birth: dateOfBirth,
+        sex,
+        occupation,
+        qualification,
+        address,
+        phone_number: phoneNumber,
+        income,
+        panchayat,
+      });
+    } else if (role === "government_monitor") {
+      Object.assign(payload, { name, type: monitorType, contact, website });
+    }
 
-		if (role === 'citizen') {
-			Object.assign(payload, {
-				name,
-				date_of_birth: dateOfBirth,
-				sex,
-				occupation,
-				qualification,
-				address,
-				phone_number: phoneNumber,
-				income,
-				panchayat,
-			});
-		} else if (role === 'government_monitor') {
-			Object.assign(payload, { name, type: monitorType, contact, website });
-		}
+    setLoading(true);
 
-		setLoading(true);
+    try {
+      const response = await fetch(`http://localhost:5000${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-		try {
-			const response = await fetch(`http://localhost:5000${endpoint}`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(payload),
-			});
+      const data = await response.json();
+      if (response.ok) {
+        console.log(role);
+        if (endpoint === "/register") {
+          localStorage.setItem("Role", role);
+        } else {
+          localStorage.setItem("Role", data.role);
+        }
+        localStorage.setItem("Username", username);
+        localStorage.setItem("Userid", data.user_id);
+        alert(data.message);
+        navigate("/dashboard/agricultural_data");
+      } else {
+        alert(data.error || "Something went wrong. Please try again.");
+      }
+    } catch (err) {
+      alert("Server error. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-			const data = await response.json();
-			if (response.ok) {
-				console.log(role);
-				if (endpoint === "/register") {
-				  localStorage.setItem("Role", role);
-				} else {
-				  localStorage.setItem("Role", data.role);
-				}
-				localStorage.setItem("Username", username);
-        localStorage.setItem("Userid", data.id);  
-				alert(data.message);
-				navigate("/dashboard/agricultural_data");
-			} else {
-				alert(data.error || 'Something went wrong. Please try again.');
-			}
-		} catch (err) {
-			alert('Server error. Please try again later.');
-		} finally {
-			setLoading(false);
-		}
-	};
+  useEffect(() => {
+    const fetchPanchayats = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/fetch_panchayat_data"
+        );
+        const data = await response.json();
+        // select the name field from the data array
+        console.log(data);
+        let names = [];
+        data.forEach((element) => {
+          names.push(element.name);
+        });
+        // data.map(() => {
+        // 	names.push(data.name);
+        // })
+        setPanchayats(names);
+        console.log(names);
+      } catch (error) {
+        console.error("Error fetching panchayats:", error);
+      }
+    };
+    fetchPanchayats();
+  }, []);
 
-	useEffect(() => {
-		const fetchPanchayats = async () => {
-			try {
-				const response = await fetch('http://localhost:5000/fetch_panchayat_data');
-				const data = await response.json();
-				// select the name field from the data array
-				console.log(data);
-				let names = [];
-				data.forEach((element) => {
-					names.push(element.name);
-				});
-				// data.map(() => {
-				// 	names.push(data.name);
-				// })
-				setPanchayats(names);
-				console.log(names);
-			} catch (error) {
-				console.error('Error fetching panchayats:', error);
-			}
-		};
-		fetchPanchayats();
-	}, []);
-
-	return (
-		<div className='auth-container'>
-			<h2 className='auth-title'>{isLogin ? 'Login' : 'Register'}</h2>
-			<form className='auth-form' onSubmit={handleSubmit}>
-				<input type='text' placeholder='Username' className='auth-input' required value={username} onChange={(e) => setUsername(e.target.value)} />
-				<input type='password' placeholder='Password' className='auth-input' required value={password} onChange={(e) => setPassword(e.target.value)} />
-				{!isLogin && (
-					<>
-						<input type='password' placeholder='Confirm Password' className='auth-input' required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-						<div className='role-selection'>
-							<label>
-								<input type='radio' name='role' value='citizen' checked={role === 'citizen'} onChange={(e) => setRole(e.target.value)} />
-								Citizen
-							</label>
+  return (
+    <div className="auth-container">
+      <h2 className="auth-title">{isLogin ? "Login" : "Register"}</h2>
+      <form className="auth-form" onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Username"
+          className="auth-input"
+          required
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          className="auth-input"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        {!isLogin && (
+          <>
+            <input
+              type="password"
+              placeholder="Confirm Password"
+              className="auth-input"
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+            <div className="role-selection">
+              <label>
+                <input
+                  type="radio"
+                  name="role"
+                  value="citizen"
+                  checked={role === "citizen"}
+                  onChange={(e) => setRole(e.target.value)}
+                />
+                Citizen
+              </label>
               <label>
                 <input
                   type="radio"

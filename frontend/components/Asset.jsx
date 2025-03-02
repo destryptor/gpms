@@ -10,22 +10,22 @@ export default function AssetList() {
   const [panchayat, setPanchayat] = useState([]);
   const [visitorrole, setVisitorrole] = useState(localStorage.getItem("Role"));
   const [visitorid, setVisitorid] = useState(localStorage.getItem("Userid"));
-  const [visitorpanchayat, setVisitorpanchayat] = useState('');
+  const [visitorpanchayat, setVisitorpanchayat] = useState("");
   const [newAsset, setNewAsset] = useState({
     id: null,
     asset_name: "",
     asset_address: {
       street: "",
       city: "",
-      state: ""
+      state: "",
     },
     asset_value: "",
     asset_date: "",
-    panchayat_id: ""
+    panchayat_id: "",
   });
 
   useEffect(() => {
-    if(visitorrole === 'panchayat'){
+    if (visitorrole === "panchayat") {
       fetch(`http://localhost:5000/fetch_panchayat_by_member/${visitorid}`)
         .then((res) => res.json())
         .then((data) => {
@@ -37,29 +37,29 @@ export default function AssetList() {
     }
   }, [visitorrole]);
 
-
   useEffect(() => {
     // Fetch data from the backend API endpoint
-    fetch('http://localhost:5000/fetch_panchayat_data')
+    fetch("http://localhost:5000/fetch_panchayat_data")
       .then((res) => res.json())
       .then((data) => {
         setPanchayat(data);
         console.log(data);
       })
       .catch((error) => {
-        toast.error('Error fetching panchayat data:', error);
+        toast.error("Error fetching panchayat data:", error);
       });
   }, []);
 
   useEffect(() => {
-
     fetch("http://localhost:5000/fetch_assets")
       .then((res) => res.json())
       .then((data) => {
         setAssets(data);
         console.log(data);
-        if(visitorrole === 'panchayat'){
-          setAssets(data.filter((item) => item.panchayat_id === visitorpanchayat));
+        if (visitorrole === "panchayat") {
+          setAssets(
+            data.filter((item) => item.panchayat_id === visitorpanchayat)
+          );
         }
         setLoading(false);
       })
@@ -78,11 +78,11 @@ export default function AssetList() {
         asset_address: {
           street: data.asset_address.street || "",
           city: data.asset_address.city || "",
-          state: data.asset_address.state || ""
+          state: data.asset_address.state || "",
         },
         asset_value: data.asset_value,
         asset_date: data.asset_date,
-        panchayat_id: data.panchayat_id
+        panchayat_id: data.panchayat_id,
       });
     } else {
       setNewAsset({
@@ -91,11 +91,11 @@ export default function AssetList() {
         asset_address: {
           street: "",
           city: "",
-          state: ""
+          state: "",
         },
         asset_value: "",
         asset_date: "",
-        panchayat_id: ""
+        panchayat_id: "",
       });
     }
     setIsModalOpen(true);
@@ -115,21 +115,30 @@ export default function AssetList() {
         ...newAsset,
         asset_address: {
           ...newAsset.asset_address,
-          [addressField]: value
-        }
+          [addressField]: value,
+        },
       });
     } else {
       setNewAsset({
         ...newAsset,
-        [name]: value
+        [name]: value,
       });
     }
   };
 
   const validateForm = () => {
-    const { asset_name, asset_address, asset_value, asset_date, panchayat_id } = newAsset;
-    if (!asset_name || !asset_address.street || !asset_address.city || !asset_address.state ||
-        !asset_value || !asset_date || !panchayat_id) {
+    const { asset_name, asset_address, asset_value, asset_date, panchayat_id } =
+      newAsset;
+    console.log(visitorpanchayat);
+    if (
+      !asset_name ||
+      !asset_address.street ||
+      !asset_address.city ||
+      !asset_address.state ||
+      !asset_value ||
+      !asset_date ||
+      !panchayat_id
+    ) {
       toast.error("All fields are required!");
       return false;
     }
@@ -138,16 +147,16 @@ export default function AssetList() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (visitorrole === "panchayat") {
+      newAsset.panchayat_id = visitorpanchayat;
+    }
+
     if (!validateForm()) return;
 
     const endpoint = isEditMode
       ? `http://localhost:5000/update_asset/${newAsset.id}`
       : "http://localhost:5000/add_asset";
     const method = isEditMode ? "PUT" : "POST";
-
-    if(visitorrole === 'panchayat'){
-      newAsset.panchayat_id = visitorpanchayat;
-    }
 
     fetch(endpoint, {
       method,
@@ -172,7 +181,10 @@ export default function AssetList() {
         closeModal();
       })
       .catch((error) => {
-        console.error(`Error ${isEditMode ? "updating" : "adding"} asset:`, error);
+        console.error(
+          `Error ${isEditMode ? "updating" : "adding"} asset:`,
+          error
+        );
         toast.error(`Error ${isEditMode ? "updating" : "adding"} asset!`);
       });
   };
@@ -215,14 +227,26 @@ export default function AssetList() {
       <div className="mt-4 mb-4">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <svg className="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-              <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+            <svg
+              className="w-4 h-4 text-gray-500"
+              aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 20 20"
+            >
+              <path
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
+              />
             </svg>
           </div>
-          <input 
-            type="text" 
+          <input
+            type="text"
             className="block w-full p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Search by asset name..." 
+            placeholder="Search by asset name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -239,10 +263,10 @@ export default function AssetList() {
                 <th className="px-6 py-3">Address</th>
                 <th className="px-6 py-3">Value</th>
                 <th className="px-6 py-3">Acquisition Date</th>
-                {visitorrole !== 'panchayat' && (
+                {visitorrole !== "panchayat" && (
                   <>
-                <th className="px-6 py-3">Panchayat ID</th>
-                <th className="px-6 py-3">Panchayat Name</th>
+                    <th className="px-6 py-3">Panchayat ID</th>
+                    <th className="px-6 py-3">Panchayat Name</th>
                   </>
                 )}
                 <th className="px-6 py-3">Actions</th>
@@ -275,10 +299,10 @@ export default function AssetList() {
                     </td>
                     <td className="px-6 py-4">{asset.asset_value}</td>
                     <td className="px-6 py-4">{asset.asset_date}</td>
-                    {visitorrole !== 'panchayat' && (
+                    {visitorrole !== "panchayat" && (
                       <>
-                      <td className="px-6 py-4">{asset.panchayat_id}</td>
-                      <td className="px-6 py-4">{asset.panchayat_name}</td>
+                        <td className="px-6 py-4">{asset.panchayat_id}</td>
+                        <td className="px-6 py-4">{asset.panchayat_name}</td>
                       </>
                     )}
                     <td className="px-6 py-4">
@@ -397,12 +421,12 @@ export default function AssetList() {
                 />
               </div>
               {/* Panchayat ID */}
-              {visitorrole !== 'panchayat' && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Panchayat ID
-                </label>
-                {/* <input
+              {visitorrole !== "panchayat" && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Panchayat ID
+                  </label>
+                  {/* <input
                   type="number"
                   name="panchayat_id"
                   value={newAsset.panchayat_id}
@@ -410,21 +434,21 @@ export default function AssetList() {
                   className="w-full p-2 border border-gray-300 rounded-md"
                   required
                 /> */}
-                <select
-                  name="panchayat_id"
-                  className="w-full px-3 py-2 border rounded-lg"
-                  value={newAsset.panchayat_id}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select Owner</option>
-                  {panchayat.map((citizen) => (
-                    <option key={citizen.id} value={citizen.id}>
-                      {citizen.name} (ID: {citizen.id})
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  <select
+                    name="panchayat_id"
+                    className="w-full px-3 py-2 border rounded-lg"
+                    value={newAsset.panchayat_id}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Select Owner</option>
+                    {panchayat.map((citizen) => (
+                      <option key={citizen.id} value={citizen.id}>
+                        {citizen.name} (ID: {citizen.id})
+                      </option>
+                    ))}
+                  </select>
+                </div>
               )}
               {/* Submit Button */}
               <div className="flex justify-end gap-2">

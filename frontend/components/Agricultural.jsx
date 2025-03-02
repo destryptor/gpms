@@ -7,48 +7,36 @@ export default function Agricultural() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add"); // "add" or "update"
   const [searchTerm, setSearchTerm] = useState("");
-  const [visitorrole, setVisitorrole] = useState(localStorage.getItem("Role"));
+  const [visitorrole, setVisitorrole] = useState("");
+  const [filteredData, setFilteredData] = useState([]);
+  const [cropmap, setCropmap] = useState({});
   const [visitorid, setVisitorid] = useState(localStorage.getItem("Userid"));
-  const [visitorpanchayat, setVisitorpanchayat] = useState('');
+  const [visitorpanchayat, setVisitorpanchayat] = useState("");
 
   useEffect(() => {
-    localStorage.getItem("Role") && setVisitorrole(localStorage.getItem("Role"));
+    localStorage.getItem("Role") &&
+      setVisitorrole(localStorage.getItem("Role"));
   }, []);
-    // Form state
+  // Form state
   const [formData, setFormData] = useState({
     id: "",
     address: {
       street: "",
       city: "",
-      zipcode: ""
+      zipcode: "",
     },
     area_in_hectares: "",
     crops_grown: "",
     citizen_id: "",
-    citizen_name: ""
+    citizen_name: "",
   });
 
-
-    useEffect(() => {
-      if(visitorrole === 'panchayat'){
-        fetch(`http://localhost:5000/fetch_panchayat_by_member/${visitorid}`)
-          .then((res) => res.json())
-          .then((data) => {
-            setVisitorpanchayat(data.panchayat_id);
-          })
-          .catch((error) => {
-            console.error("Error fetching panchayat data:", error);
-          });
-      }
-    }, [visitorrole]);
-  
-  
   // Fetch initial agriculture data
   useEffect(() => {
     fetchAgricultureData();
     fetchCitizenData();
-  }, [visitorrole, visitorpanchayat]);
-  
+  }, []);
+
   const fetchAgricultureData = () => {
     setLoading(true);
     fetch("http://localhost:5000/fetch_agriculture_data")
@@ -56,9 +44,30 @@ export default function Agricultural() {
       .then((data) => {
         console.log(data);
         setAgricultureData(data);
-        if(visitorrole === 'panchayat'){
-          setAgricultureData(data.filter((agriculture) => agriculture.panchayat_id === visitorpanchayat));
+        setFilteredData(data);
+        const newCropmap = {};
+        data.forEach((item) => {
+          const area = parseFloat(item.area_in_hectares) || 0;
+          const crops = Array.isArray(item.crops_grown)
+            ? item.crops_grown
+            : item.crops_grown.split(",").map((crop) => crop.trim());
+
+          crops.forEach((crop) => {
+            if (newCropmap[crop]) {
+              newCropmap[crop] += area;
+            } else {
+              newCropmap[crop] = area;
+            }
+          });
+        });
+        if (visitorrole === "panchayat") {
+          setAgricultureData(
+            data.filter(
+              (agriculture) => agriculture.panchayat_id === visitorpanchayat
+            )
+          );
         }
+        setCropmap(newCropmap);
         setLoading(false);
       })
       .catch((error) => {
@@ -66,7 +75,7 @@ export default function Agricultural() {
         setLoading(false);
       });
   };
-  
+
   const fetchCitizenData = () => {
     fetch("http://localhost:5000/fetch_citizen_data_for_agriculture")
       .then((res) => res.json())
@@ -77,34 +86,40 @@ export default function Agricultural() {
         console.error("Error fetching citizen data:", error);
       });
   };
-  
+
   const searchByPanchayat = () => {
-    if (!searchTerm.trim()) {
-      fetchAgricultureData();
-      return;
-    }
-    
-    setLoading(true);
-    // Call the new search route with the panchayat name in the URL
-    fetch(`http://localhost:5000/fetch_agriculture_by_panchayat_name/${searchTerm}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setAgricultureData(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error searching data:", error);
-        setLoading(false);
+    const filteredD = agricultureData.filter((item) => {
+      const query = searchTerm.toLowerCase();
+      return item.panchayat_name.toLowerCase().includes(query);
+    });
+    setFilteredData(filteredD);
+    const newCropmap = {};
+    filteredD.forEach((item) => {
+      const area = parseFloat(item.area_in_hectares) || 0;
+      const crops = Array.isArray(item.crops_grown)
+        ? item.crops_grown
+        : item.crops_grown.split(",").map((crop) => crop.trim());
+
+      crops.forEach((crop) => {
+        if (newCropmap[crop]) {
+          newCropmap[crop] += area;
+        } else {
+          newCropmap[crop] = area;
+        }
       });
+    });
+    console.log(newCropmap);
+    setCropmap(newCropmap);
   };
-  
-  
+
   const handleOpenModal = (mode, data = null) => {
     setModalMode(mode);
     if (mode === "update" && data) {
       setFormData({
         ...data,
-        crops_grown: Array.isArray(data.crops_grown) ? data.crops_grown.join(", ") : data.crops_grown
+        crops_grown: Array.isArray(data.crops_grown)
+          ? data.crops_grown.join(", ")
+          : data.crops_grown,
       });
     } else {
       setFormData({
@@ -112,76 +127,76 @@ export default function Agricultural() {
         address: {
           street: "",
           city: "",
-          zipcode: ""
+          zipcode: "",
         },
         area_in_hectares: "",
         crops_grown: "",
         citizen_id: "",
-        citizen_name: ""
+        citizen_name: "",
       });
     }
     setIsModalOpen(true);
   };
-  
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
   };
-  
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name.includes(".")) {
       const [parent, child] = name.split(".");
       setFormData({
         ...formData,
         [parent]: {
           ...formData[parent],
-          [child]: value
-        }
+          [child]: value,
+        },
       });
     } else {
       setFormData({
         ...formData,
-        [name]: value
+        [name]: value,
       });
     }
   };
-  
+
   const handleCitizenSelect = (e) => {
     const selectedId = parseInt(e.target.value, 10);
     const selectedCitizen = citizenData.find(
       (citizen) => citizen.id === selectedId
     );
-  
+
     if (selectedCitizen) {
       setFormData({
         ...formData,
         citizen_id: selectedCitizen.id,
-        citizen_name: selectedCitizen.name
+        citizen_name: selectedCitizen.name,
       });
     } else {
       setFormData({
         ...formData,
         citizen_id: "",
-        citizen_name: ""
+        citizen_name: "",
       });
     }
   };
-  
-  
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     // Prepare data for submission
     const submissionData = {
       ...formData,
-      crops_grown: formData.crops_grown.split(",").map(crop => crop.trim())
+      crops_grown: formData.crops_grown.split(",").map((crop) => crop.trim()),
     };
-    
-    const endpoint = modalMode === "add" 
-      ? "http://localhost:5000/add_agriculture_data"
-      : "http://localhost:5000/update_agriculture_data";
-    
+
+    const endpoint =
+      modalMode === "add"
+        ? "http://localhost:5000/add_agriculture_data"
+        : "http://localhost:5000/update_agriculture_data";
+
     fetch(endpoint, {
       method: "POST",
       headers: {
@@ -199,7 +214,7 @@ export default function Agricultural() {
         console.error("Error:", error);
       });
   };
-  
+
   const handleDelete = (id) => {
     if (window.confirm("Are you sure you want to delete this record?")) {
       fetch(`http://localhost:5000/delete_agriculture_data/${id}`, {
@@ -225,125 +240,272 @@ export default function Agricultural() {
           </span>
         </div>
         {visitorrole === "admin" && (
-          <button 
-          className="py-2 px-4 bg-[#000000] font-medium text-sm text-white rounded-lg cursor-pointer"
-          onClick={() => handleOpenModal("add")}
+          <button
+            className="py-2 px-4 bg-[#000000] font-medium text-sm text-white rounded-lg cursor-pointer"
+            onClick={() => handleOpenModal("add")}
           >
-          Add Data
-        </button>)
-        }
+            Add Data
+          </button>
+        )}
       </div>
+
       {visitorrole !== "panchayat" && (
-      <div className="mt-4 mb-4 flex flex-row justify-between items-center w-full gap-2">
-        <div className="relative w-full">
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <svg className="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-              <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
-            </svg>
+        <div className="mt-4 mb-4 flex flex-row justify-between items-center w-full gap-2">
+          <div className="relative w-full">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <svg
+                className="w-4 h-4 text-gray-500"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
+                />
+              </svg>
+            </div>
+            <input
+              type="text"
+              className="block w-full p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Search by panchayat name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-          <input 
-            type="text" 
-            className="block w-full p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Search by panchayat name..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <button
+            onClick={searchByPanchayat}
+            className="py-1.5 px-2 bg-black cursor-pointer text-white rounded-lg"
+          >
+            Search
+          </button>
         </div>
-        <button 
-          onClick={searchByPanchayat}
-          className="py-1.5 px-2 bg-black cursor-pointer text-white rounded-lg"
-        >
-          Search
-        </button>
-      </div>
       )}
-      
-      <div className="mt-4">
-        <div className="relative overflow-x-auto sm:rounded-lg">
-          <table className="w-full text-sm text-left rtl:text-right text-gray-500">
-            <thead className="text-base text-gray-700 bg-gray-50 border-b">
-              <tr>
-                <th scope="col" className="px-6 py-3">
-                  ID
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Address
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Area in Hectares
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Crops Grown
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Owner ID
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Owner Name
-                </th>
-                {visitorrole === "admin" && (
-                  <th scope="col" className="px-6 py-3">
-                  Actions
-                </th>)
-                }
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan="7" className="text-center py-4">
-                    Loading...
-                  </td>
-                </tr>
-              ) : agricultureData.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="text-center py-4">
-                    No data found.
-                  </td>
-                </tr>
-              ) : (
-                agricultureData.map((data) => (
-                  <tr key={data.agriculture_id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">{data.agriculture_id}</td>
-                    <td className="px-6 py-4">
-                      {data.address
-                        ? `${data.address.street}, ${data.address.city}, ${data.address.zipcode}`
-                        : "N/A"}
-                    </td>
-                    <td className="px-6 py-4">{data.area_in_hectares}</td>
-                    <td className="px-6 py-4">
-                      {Array.isArray(data.crops_grown)
-                        ? data.crops_grown.join(", ")
-                        : data.crops_grown}
-                    </td>
-                    <td className="px-6 py-4">{data.citizen_id}</td>
-                    <td className="px-6 py-4">{data.citizen_name}</td>
+
+      {visitorrole === "government_monitor" && (
+        <>
+          {Object.keys(cropmap).length > 0 && (
+            <div className="mt-6">
+              <h2 className="text-lg font-semibold text-gray-700 mb-2">
+                Crop-wise Area Distribution
+              </h2>
+              <div className="relative overflow-x-auto sm:rounded-lg">
+                <table className="w-full text-sm text-left rtl:text-right text-gray-500">
+                  <thead className="text-base text-gray-700 bg-gray-50 border-b">
+                    <tr>
+                      <th scope="col" className="px-6 py-3">
+                        Crop Grown
+                      </th>
+                      <th scope="col" className="px-6 py-3">
+                        Total Area (Hectares)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(cropmap).map(([crop, area]) => (
+                      <tr key={crop} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">{crop}</td>
+                        <td className="px-6 py-4">{area.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-4">
+            <div className="relative overflow-x-auto sm:rounded-lg">
+              <table className="w-full text-sm text-left rtl:text-right text-gray-500">
+                <thead className="text-base text-gray-700 bg-gray-50 border-b">
+                  <tr>
+                    <th scope="col" className="px-6 py-3">
+                      ID
+                    </th>
+                    <th scope="col" className="px-6 py-3">
+                      Address
+                    </th>
+                    <th scope="col" className="px-6 py-3">
+                      Area in Hectares
+                    </th>
+                    <th scope="col" className="px-6 py-3">
+                      Crops Grown
+                    </th>
+                    <th scope="col" className="px-6 py-3">
+                      Owner ID
+                    </th>
+                    <th scope="col" className="px-6 py-3">
+                      Owner Name
+                    </th>
+                    <th scope="col" className="px-6 py-3">
+                      Panchayat Name
+                    </th>
                     {visitorrole === "admin" && (
-                    <td className="px-6 py-4">
-                      <div className="flex space-x-2">
-                        <button 
-                          onClick={() => handleOpenModal("update", data)}
-                          className="font-medium text-blue-600 hover:text-blue-800 cursor-pointer"
-                        >
-                          Edit
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(data.id)}
-                          className="font-medium text-red-600 hover:text-red-800 cursor-pointer"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
+                      <th scope="col" className="px-6 py-3">
+                        Actions
+                      </th>
                     )}
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="7" className="text-center py-4">
+                        Loading...
+                      </td>
+                    </tr>
+                  ) : agricultureData.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="text-center py-4">
+                        No data found.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredData.map((data) => (
+                      <tr
+                        key={data.agriculture_id}
+                        className="hover:bg-gray-50"
+                      >
+                        <td className="px-6 py-4">{data.agriculture_id}</td>
+                        <td className="px-6 py-4">
+                          {data.address
+                            ? `${data.address.street}, ${data.address.city}, ${data.address.zipcode}`
+                            : "N/A"}
+                        </td>
+                        <td className="px-6 py-4">{data.area_in_hectares}</td>
+                        <td className="px-6 py-4">
+                          {Array.isArray(data.crops_grown)
+                            ? data.crops_grown.join(", ")
+                            : data.crops_grown}
+                        </td>
+                        <td className="px-6 py-4">{data.citizen_id}</td>
+                        <td className="px-6 py-4">{data.citizen_name}</td>
+                        <td className="px-6 py-4">{data.panchayat_name}</td>
+                        {visitorrole === "admin" && (
+                          <td className="px-6 py-4">
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleOpenModal("update", data)}
+                                className="font-medium text-blue-600 hover:text-blue-800 cursor-pointer"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDelete(data.id)}
+                                className="font-medium text-red-600 hover:text-red-800 cursor-pointer"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      {visitorrole === "panchayat" && (
+        <>
+          <div className="mt-4">
+            <div className="relative overflow-x-auto sm:rounded-lg">
+              <table className="w-full text-sm text-left rtl:text-right text-gray-500">
+                <thead className="text-base text-gray-700 bg-gray-50 border-b">
+                  <tr>
+                    <th scope="col" className="px-6 py-3">
+                      ID
+                    </th>
+                    <th scope="col" className="px-6 py-3">
+                      Address
+                    </th>
+                    <th scope="col" className="px-6 py-3">
+                      Area in Hectares
+                    </th>
+                    <th scope="col" className="px-6 py-3">
+                      Crops Grown
+                    </th>
+                    <th scope="col" className="px-6 py-3">
+                      Owner ID
+                    </th>
+                    <th scope="col" className="px-6 py-3">
+                      Owner Name
+                    </th>
+                    {visitorrole === "admin" && (
+                      <th scope="col" className="px-6 py-3">
+                        Actions
+                      </th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="7" className="text-center py-4">
+                        Loading...
+                      </td>
+                    </tr>
+                  ) : agricultureData.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="text-center py-4">
+                        No data found.
+                      </td>
+                    </tr>
+                  ) : (
+                    agricultureData.map((data) => (
+                      <tr
+                        key={data.agriculture_id}
+                        className="hover:bg-gray-50"
+                      >
+                        <td className="px-6 py-4">{data.agriculture_id}</td>
+                        <td className="px-6 py-4">
+                          {data.address
+                            ? `${data.address.street}, ${data.address.city}, ${data.address.zipcode}`
+                            : "N/A"}
+                        </td>
+                        <td className="px-6 py-4">{data.area_in_hectares}</td>
+                        <td className="px-6 py-4">
+                          {Array.isArray(data.crops_grown)
+                            ? data.crops_grown.join(", ")
+                            : data.crops_grown}
+                        </td>
+                        <td className="px-6 py-4">{data.citizen_id}</td>
+                        <td className="px-6 py-4">{data.citizen_name}</td>
+                        {visitorrole === "admin" && (
+                          <td className="px-6 py-4">
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleOpenModal("update", data)}
+                                className="font-medium text-blue-600 hover:text-blue-800 cursor-pointer"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDelete(data.id)}
+                                className="font-medium text-red-600 hover:text-red-800 cursor-pointer"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Modal for Add/Update */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -351,7 +513,7 @@ export default function Agricultural() {
             <h2 className="text-xl font-semibold mb-4">
               {modalMode === "add" ? "Add New" : "Update"} Agricultural Data
             </h2>
-            
+
             <form onSubmit={handleSubmit}>
               {/* Owner Selection */}
               <div className="mb-4">
@@ -372,7 +534,7 @@ export default function Agricultural() {
                   ))}
                 </select>
               </div>
-              
+
               {/* Address Fields */}
               <div className="mb-4">
                 <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -387,7 +549,7 @@ export default function Agricultural() {
                   required
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -416,7 +578,7 @@ export default function Agricultural() {
                   />
                 </div>
               </div>
-              
+
               {/* Area in Hectares */}
               <div className="mb-4">
                 <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -432,7 +594,7 @@ export default function Agricultural() {
                   step="0.01"
                 />
               </div>
-              
+
               {/* Crops Grown */}
               <div className="mb-4">
                 <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -448,7 +610,7 @@ export default function Agricultural() {
                   placeholder="wheat, rice, corn"
                 />
               </div>
-              
+
               <div className="flex justify-end gap-2">
                 <button
                   type="button"

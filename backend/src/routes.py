@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from database.dbInit import db
 from database.classes import *
 from sqlalchemy import text
+from sqlalchemy import insert
 from sqlalchemy.orm import aliased
 import datetime
 
@@ -147,8 +148,6 @@ def agricult_routes(app):
                 }
                 for agri, citizen, panchayat in result
             ]
-            
-            print(data_list)
 
             return jsonify(data_list), 200
         except Exception as e:
@@ -251,6 +250,8 @@ def agricult_routes(app):
             print("Error:", e)
             return jsonify({'error': str(e)}), 500
 
+    
+        
 
 def panchayat_routes(app):
     @app.route('/add_panchayat_data', methods=['POST'])
@@ -404,6 +405,16 @@ def citizen_routes(app):
             db.session.add(new_citizen)
             db.session.commit()
 
+            panchayat_id = data.get('panchayat_id')
+        
+            new_citizen_lives_in_panchayat = {
+                'citizen_id': new_citizen.id,
+                'panchayat_id': panchayat_id
+            }
+
+            db.session.execute(insert(citizen_lives_in_panchayat).values(new_citizen_lives_in_panchayat))
+            db.session.commit()
+            
             new_citizen_data = {
                 'id': new_citizen.id,
                 'name': new_citizen.name,
@@ -654,13 +665,15 @@ def panchayat_member_routes(app):
             print("Error:", e)
             return jsonify({'error': str(e)}), 500
     
-    @app.route('/fetch_panchayat_by_member/<int:citizen_id>', methods=['GET'])
-    def fetch_panchayat_by_member(citizen_id):
+    @app.route('/fetch_panchayat_by_member/<int:user_id>', methods=['GET'])
+    def fetch_panchayat_by_member(user_id):
         try:
             
+            citizen_id = db.session.query(CitizenUser).filter_by(user_id=user_id).first().citizen_id
+            print(citizen_id)
             # Query the association table for specific citizen
             member = db.session.query(citizen_panchayat).filter_by(citizen_id=citizen_id).first()
-            
+            print(member)
             if not member:
                 return jsonify({"error": "Citizen is not a member of any panchayat"}), 404
                 
@@ -829,7 +842,37 @@ def scheme_routes(app):
         except Exception as e:
             print("Error deleting scheme:", e)
             return jsonify({'error': str(e)}), 500
+    @app.route('/fetch_schemes_benefit',methods=['GET'])
+    def fetch_schemes_benefit():
+        try:
+            result = (
+                    db.session.query(Scheme, Citizen,Panchayat)
+                    .join(citizen_scheme, citizen_scheme.c.citizen_id == Citizen.id)  
+                    .join(Scheme, Scheme.id == citizen_scheme.c.scheme_id)
+                    .join(citizen_lives_in_panchayat,citizen_lives_in_panchayat.c.citizen_id==Citizen.id)
+                    .join(Panchayat,citizen_lives_in_panchayat.c.panchayat_id == Panchayat.id)  
+                    .all()
+                     )
 
+
+            result_list = [
+                {
+                    'scheme_id': sch.id,
+                    'scheme_name': sch.name,
+                    'scheme_gov_id': sch.gov_id,
+                    'scheme_description': sch.description,
+                    'citizen_id': cit.id,
+                    'citizen_name': cit.name,
+                    'panchayat_name':panch.name
+                }
+                for sch, cit,panch in result
+            ]
+
+            return jsonify(result_list), 200
+
+        except Exception as e:
+            print("Error:", e)
+            return jsonify({'error': str(e)}), 500
 
 def asset_routes(app):
 
@@ -948,11 +991,13 @@ def family_member_routes(app):
                 citizen1.name.label('citizen_name'),
                 family_member.c.citizen_id_second,
                 citizen2.name.label('family_member_name'),
-                family_member.c.relationship
+                family_member.c.relationship,
+                CitizenUser.user_id  # Include user_id from CitizenUser table
             ).join(
                 citizen1, family_member.c.citizen_id_first == citizen1.id
             ).join(
                 citizen2, family_member.c.citizen_id_second == citizen2.id
+            ).join(CitizenUser, citizen1.id == CitizenUser.citizen_id
             ).all()
 
             # Convert result to JSON
@@ -962,7 +1007,8 @@ def family_member_routes(app):
                     'citizen_name': row.citizen_name,
                     'family_member_id': row.citizen_id_second,
                     'family_member_name': row.family_member_name,
-                    'relationship': row.relationship
+                    'relationship': row.relationship,
+                    "user_id": row.user_id  # Extract user_id from CitizenUser table
                 }
                 for row in result
             ]
@@ -971,6 +1017,9 @@ def family_member_routes(app):
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+
+
+def service_routes(app):
     
     @app.route('/fetch_citizens', methods=['GET'])
     def fetch_citizens():
@@ -1213,27 +1262,30 @@ def tax_route(app):
     def fetch_tax_data():
         try:
             tax_data = db.session.query(
-                Tax, 
-                GovernmentMonitor.name.label('monitoring_gov_name'), 
-                Citizen.name.label('paying_citizen_name')
-            ).join(
-                GovernmentMonitor, Tax.monitoring_gov_id == GovernmentMonitor.id
+                Tax, Citizen, Panchayat, GovernmentMonitor
             ).join(
                 Citizen, Tax.paying_citizen_id == Citizen.id
-            ).all()
+            ).join(
+                citizen_lives_in_panchayat, citizen_lives_in_panchayat.c.citizen_id == Citizen.id
+            ).join(
+                Panchayat, citizen_lives_in_panchayat.c.panchayat_id == Panchayat.id
+            ).join(
+                GovernmentMonitor, Tax.monitoring_gov_id == GovernmentMonitor.id
+            ).all()  # The .all() method should be on the same line as the last join
+
             data_list = [
                 {
                     'id': tax.id,
                     'name': tax.name,
                     'amount_in_percentage': tax.amount_in_percentage,
                     'tier': tax.tier,
-                    'monitoring_gov_id': tax.monitoring_gov_id,
-                    'monitoring_gov_name': monitoring_gov_name,
-                    'paying_citizen_id': tax.paying_citizen_id,
-                    'paying_citizen_name': paying_citizen_name
+                    'monitoring_gov_name': gov.name,
+                    'paying_citizen_name': cit.name,
+                    'panchayat_name': panch.name
                 }
-                for tax, monitoring_gov_name, paying_citizen_name in tax_data
+                for tax, cit, panch, gov in tax_data
             ]
+            print(data_list)
             return jsonify(data_list), 200
         except Exception as e:
             return jsonify({'error': str(e)}), 500

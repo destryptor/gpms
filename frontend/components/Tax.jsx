@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import toast, { Toaster } from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function Tax() {
   const [taxData, setTaxData] = useState([]);
@@ -8,17 +8,16 @@ export default function Tax() {
   const [citizens, setCitizens] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [visitorrole, setVisitorRole] = useState(localStorage.getItem('Role')); 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [visitorrole, setVisitorRole] = useState(localStorage.getItem("Role"));
   const [newTax, setNewTax] = useState({
     id: null,
-    name: '',
-    amount_in_percentage: '',
-    tier: '',
-    monitoring_gov_id: '',
-    paying_citizen_id: ''
+    name: "",
+    amount_in_percentage: "",
+    tier: "",
+    monitoring_gov_id: "",
+    paying_citizen_id: "",
   });
-
 
   // Fetch tax data on mount
   useEffect(() => {
@@ -28,41 +27,41 @@ export default function Tax() {
   }, []);
 
   const fetchTaxData = () => {
-    fetch('http://localhost:5000/fetch_tax_data')
+    fetch("http://localhost:5000/fetch_tax_data")
       .then((res) => res.json())
       .then((data) => {
         setTaxData(data);
         setLoading(false);
       })
       .catch((error) => {
-        console.error('Error fetching tax data:', error);
+        console.error("Error fetching tax data:", error);
         setLoading(false);
-        toast.error('Error fetching tax data');
+        toast.error("Error fetching tax data");
       });
   };
 
   const fetchGovernmentMonitors = () => {
-    fetch('http://localhost:5000/fetch_government_monitors')
+    fetch("http://localhost:5000/fetch_government_monitors")
       .then((res) => res.json())
       .then((data) => {
         setGovernmentMonitors(data);
       })
       .catch((error) => {
-        console.error('Error fetching government monitors:', error);
-        toast.error('Error fetching government monitors');
+        console.error("Error fetching government monitors:", error);
+        toast.error("Error fetching government monitors");
       });
   };
 
   const fetchCitizens = () => {
     // Assuming you use this endpoint for a simple list of citizens (id and name)
-    fetch('http://localhost:5000/fetch_citizen_data_for_agriculture')
+    fetch("http://localhost:5000/fetch_citizen_data_for_agriculture")
       .then((res) => res.json())
       .then((data) => {
         setCitizens(data);
       })
       .catch((error) => {
-        console.error('Error fetching citizens:', error);
-        toast.error('Error fetching citizens');
+        console.error("Error fetching citizens:", error);
+        toast.error("Error fetching citizens");
       });
   };
 
@@ -75,16 +74,16 @@ export default function Tax() {
         amount_in_percentage: data.amount_in_percentage,
         tier: data.tier,
         monitoring_gov_id: data.monitoring_gov_id,
-        paying_citizen_id: data.paying_citizen_id
+        paying_citizen_id: data.paying_citizen_id,
       });
     } else {
       setNewTax({
         id: null,
-        name: '',
-        amount_in_percentage: '',
-        tier: '',
-        monitoring_gov_id: '',
-        paying_citizen_id: ''
+        name: "",
+        amount_in_percentage: "",
+        tier: "",
+        monitoring_gov_id: "",
+        paying_citizen_id: "",
       });
     }
     setIsModalOpen(true);
@@ -113,58 +112,60 @@ export default function Tax() {
       !newTax.monitoring_gov_id ||
       !newTax.paying_citizen_id
     ) {
-      toast.error('Please fill in all fields');
+      toast.error("Please fill in all fields");
       return;
     }
 
     const endpoint = isEditMode
       ? `http://localhost:5000/update_tax_data/${newTax.id}`
-      : 'http://localhost:5000/add_tax_data';
-    const method = isEditMode ? 'PUT' : 'POST';
+      : "http://localhost:5000/add_tax_data";
+    const method = isEditMode ? "PUT" : "POST";
 
     fetch(endpoint, {
       method: method,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(newTax),
     })
       .then((res) => res.json())
       .then((data) => {
         if (isEditMode) {
-          setTaxData(taxData.map(item => item.id === newTax.id ? data.data : item));
-          toast.success('Tax data updated successfully!');
+          setTaxData(
+            taxData.map((item) => (item.id === newTax.id ? data.data : item))
+          );
+          toast.success("Tax data updated successfully!");
         } else {
           setTaxData([...taxData, data.data]);
-          toast.success('Tax data added successfully!');
+          toast.success("Tax data added successfully!");
         }
         closeModal();
       })
       .catch((error) => {
-        console.error('Error submitting tax data:', error);
-        toast.error('Error submitting tax data');
+        console.error("Error submitting tax data:", error);
+        toast.error("Error submitting tax data");
       });
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this tax data?')) {
+    if (window.confirm("Are you sure you want to delete this tax data?")) {
       fetch(`http://localhost:5000/delete_tax_data/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       })
         .then((res) => res.json())
         .then((data) => {
-          setTaxData(taxData.filter(item => item.id !== id));
-          toast.success('Tax data deleted successfully!');
+          setTaxData(taxData.filter((item) => item.id !== id));
+          toast.success("Tax data deleted successfully!");
         })
         .catch((error) => {
-          console.error('Error deleting tax data:', error);
-          toast.error('Error deleting tax data!');
+          console.error("Error deleting tax data:", error);
+          toast.error("Error deleting tax data!");
         });
     }
   };
 
   // Filter tax data based on search query (by tax name)
-  const filteredData = taxData.filter(item =>
+  const filteredData = taxData.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -172,13 +173,13 @@ export default function Tax() {
     <div className="p-6 flex-1 bg-white rounded-lg h-full overflow-y-auto">
       <div className="flex flex-row justify-between items-center">
         <h1 className="text-lg font-semibold text-gray-700">Tax Data</h1>
-        {visitorrole === 'admin' && (
-        <button
-          className="py-2 px-4 bg-black font-medium text-sm text-white rounded-lg"
-          onClick={() => openModal(false)}
-        >
-          Add Data
-        </button>
+        {visitorrole === "admin" && (
+          <button
+            className="py-2 px-4 bg-black font-medium text-sm text-white rounded-lg"
+            onClick={() => openModal(false)}
+          >
+            Add Data
+          </button>
         )}
       </div>
 
@@ -186,20 +187,31 @@ export default function Tax() {
       <div className="mt-4 mb-4">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <svg className="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-              <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+            <svg
+              className="w-4 h-4 text-gray-500"
+              aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 20 20"
+            >
+              <path
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
+              />
             </svg>
           </div>
-          <input 
-            type="text" 
+          <input
+            type="text"
             className="block w-full p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Search by tax name..." 
+            placeholder="Search by tax name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
-
 
       <div className="mt-4">
         <div className="relative overflow-x-auto sm:rounded-lg">
@@ -210,11 +222,12 @@ export default function Tax() {
                 <th className="px-6 py-3">Name</th>
                 <th className="px-6 py-3">Amount (%)</th>
                 <th className="px-6 py-3">Tier</th>
-                <th className="px-6 py-3">Gov ID</th>
                 <th className="px-6 py-3">Gov Name</th>
-                <th className="px-6 py-3">Citizen ID</th>
                 <th className="px-6 py-3">Citizen Name</th>
-                {visitorrole === 'admin' && <th className="px-6 py-3">Actions</th>}
+                <th className="px-6 py-3">Panchayat Name</th>
+                {visitorrole === "admin" && (
+                  <th className="px-6 py-3">Actions</th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -237,25 +250,24 @@ export default function Tax() {
                     <td className="px-6 py-4">{data.name}</td>
                     <td className="px-6 py-4">{data.amount_in_percentage}</td>
                     <td className="px-6 py-4">{data.tier}</td>
-                    <td className="px-6 py-4">{data.monitoring_gov_id}</td>
                     <td className="px-6 py-4">{data.monitoring_gov_name}</td>
-                    <td className="px-6 py-4">{data.paying_citizen_id}</td>
                     <td className="px-6 py-4">{data.paying_citizen_name}</td>
-                    {visitorrole === 'admin' && (
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={() => openModal(true, data)}
-                        className="text-blue-600 hover:text-blue-800 mr-2"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(data.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        Delete
-                      </button>
-                    </td>
+                    <td className="px-6 py-4">{data.panchayat_name}</td>
+                    {visitorrole === "admin" && (
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => openModal(true, data)}
+                          className="text-blue-600 hover:text-blue-800 mr-2"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(data.id)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          Delete
+                        </button>
+                      </td>
                     )}
                   </tr>
                 ))
@@ -271,16 +283,21 @@ export default function Tax() {
           <div className="bg-white p-6 rounded-lg w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">
-                {isEditMode ? 'Edit Tax Data' : 'Add Tax Data'}
+                {isEditMode ? "Edit Tax Data" : "Add Tax Data"}
               </h2>
-              <button onClick={closeModal} className="text-gray-500 hover:text-gray-700">
+              <button
+                onClick={closeModal}
+                className="text-gray-500 hover:text-gray-700"
+              >
                 ✕
               </button>
             </div>
             <form onSubmit={handleSubmit}>
               {/* Tax Name */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Name
+                </label>
                 <input
                   type="text"
                   name="name"
@@ -292,7 +309,9 @@ export default function Tax() {
               </div>
               {/* Amount in Percentage */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Amount (%)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Amount (%)
+                </label>
                 <input
                   type="number"
                   name="amount_in_percentage"
@@ -304,7 +323,9 @@ export default function Tax() {
               </div>
               {/* Tier */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tier</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tier
+                </label>
                 <input
                   type="text"
                   name="tier"
@@ -366,7 +387,7 @@ export default function Tax() {
                   type="submit"
                   className="py-2 px-4 bg-black text-white rounded-lg hover:bg-gray-800"
                 >
-                  {isEditMode ? 'Update' : 'Submit'}
+                  {isEditMode ? "Update" : "Submit"}
                 </button>
               </div>
             </form>

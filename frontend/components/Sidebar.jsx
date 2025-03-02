@@ -1,38 +1,89 @@
 import { useEffect } from "react";
 import { useState } from "react";
-import { Link,NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 
 const navItems = [
-    { name: "Agricultural Data", to: "/dashboard/agricultural_data", icon: "bxs-data" },
-    { name: "Asset", to: "/dashboard/asset", icon: "bxs-data" },
-    { name: "Citizen Benefits From Schemes", to: "/dashboard/citizen_benefits_from_schemes", icon: "bxs-data" },
-    { name: "Citizen Member Of Panchayat", to: "/dashboard/citizen_member_of_panchayat", icon: "bxs-data" },
-    { name: "Citizens", to: "/dashboard/citizen", icon: "bxs-data" },
-    { name: "Family Member", to: "/dashboard/family_member", icon: "bxs-data" },
-    { name: "Government Monitor", to: "/dashboard/government_monitor", icon: "bxs-data" },
-    { name: "Panchayat", to: "/dashboard/panchayat", icon: "bxs-data" },
-    { name: "Scheme", to: "/dashboard/scheme", icon: "bxs-data" },
-    { name: "Service", to: "/dashboard/service", icon: "bxs-data" },
-    { name: "Tax", to: "/dashboard/tax", icon: "bxs-data" },
-    { name: "Users", to: "/dashboard/users", icon: "bxs-data" },
+  {
+    name: "Agricultural Data",
+    to: "/dashboard/agricultural_data",
+    icon: "bxs-data",
+  },
+  { name: "Asset", to: "/dashboard/asset", icon: "bxs-data" },
+  {
+    name: "Citizen Benefits From Schemes",
+    to: "/dashboard/citizen_benefits_from_schemes",
+    icon: "bxs-data",
+  },
+  {
+    name: "Citizen Member Of Panchayat",
+    to: "/dashboard/citizen_member_of_panchayat",
+    icon: "bxs-data",
+  },
+  { name: "Citizens", to: "/dashboard/citizen", icon: "bxs-data" },
+  { name: "Family Member", to: "/dashboard/family_member", icon: "bxs-data" },
+  {
+    name: "Government Monitor",
+    to: "/dashboard/government_monitor",
+    icon: "bxs-data",
+  },
+  { name: "Panchayat", to: "/dashboard/panchayat", icon: "bxs-data" },
+  { name: "Scheme", to: "/dashboard/scheme", icon: "bxs-data" },
+  { name: "Service", to: "/dashboard/service", icon: "bxs-data" },
+  { name: "Tax", to: "/dashboard/tax", icon: "bxs-data" },
+  { name: "Users", to: "/dashboard/users", icon: "bxs-data" },
 ];
 
 const citizenItems = [
-    { name: "Citizen", to: "/dashboard/citizen", icon: "bxs-data" },
-    { name: "Family Member", to: "/dashboard/family_member", icon: "bxs-data" },
-    { name: "Citizen Benefits From Schemes", to: "/dashboard/citizen_benefits_from_schemes", icon: "bxs-data" },
+  { name: "Family Member", to: "/dashboard/family_member", icon: "bxs-data" },
+  {
+    name: "Citizen Benefits From Schemes",
+    to: "/dashboard/citizen_benefits_from_schemes",
+    icon: "bxs-data",
+  },
+  {
+    name: "Agricultural data",
+    to: "/dashboard/agricultural_data",
+    icon: "bxs-data",
+  },
 ];
 
 const panchayatItems = [
-    { name: "Panchayat", to: "/dashboard/panchayat", icon: "bxs-data" },
-    { name: "Scheme", to: "/dashboard/scheme", icon: "bxs-data" },
-    { name: "Service", to: "/dashboard/service", icon: "bxs-data" },
-    { name: "Asset", to: "/dashboard/asset", icon: "bxs-data" },
-    { name: "Agricultural Data", to: "/dashboard/agricultural_data", icon: "bxs-data" },
-    { name: "Citizen", to: "/dashboard/citizen", icon: "bxs-data" }
-    // { name: "Family Member", to: "/dashboard/family_member", icon: "bxs-data" }
+  { name: "Panchayat", to: "/dashboard/panchayat", icon: "bxs-data" },
+  { name: "Scheme", to: "/dashboard/scheme", icon: "bxs-data" },
+  { name: "Service", to: "/dashboard/service", icon: "bxs-data" },
+  { name: "Asset", to: "/dashboard/asset", icon: "bxs-data" },
+  {
+    name: "Agricultural Data",
+    to: "/dashboard/agricultural_data",
+    icon: "bxs-data",
+  },
+  { name: "Citizen", to: "/dashboard/citizen", icon: "bxs-data" },
+  // { name: "Family Member", to: "/dashboard/family_member", icon: "bxs-data" }
 ];
 
+const govtItems = [
+  {
+    name: "Agricultural Data",
+    to: "/dashboard/agricultural_data",
+    icon: "bxs-data",
+  },
+  {
+    name: "Schemes",
+    to: "/dashboard/scheme",
+    icon: "bxs-data",
+  },
+  {
+    name: "Citizen Benefits From Schemes",
+    to: "/dashboard/citizen_benefits_from_schemes",
+    icon: "bxs-data",
+  },
+  { name: "Citizens", to: "/dashboard/citizen", icon: "bxs-data" },
+  { name: "Panchayat", to: "/dashboard/panchayat", icon: "bxs-data" },
+  { name: "Service", to: "/dashboard/service", icon: "bxs-data" },
+  { name: "Tax", to: "/dashboard/tax", icon: "bxs-data" },
+];
+
+<i class="bx "></i>;
 
 // public | agricultural_data             | table | 22CS30032
 // public | asset                         | table | 22CS30032
@@ -50,78 +101,100 @@ const panchayatItems = [
 // public | users                         | table | 22CS30032
 
 const Sidebar = () => {
-    const [visitorrole, setVisitorrole] = useState("citizen");
-    const [table, setTable] = useState(navItems);
+  const [visitorrole, setVisitorrole] = useState("citizen");
+  const [table, setTable] = useState(navItems);
 
-    useEffect(() => {
-        const role = localStorage.getItem("Role");
-        setVisitorrole(role);
-    }, []);
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        if (visitorrole === "citizen") {
-            setTable(citizenItems);
-        } else if (visitorrole === "panchayat") {
-            setTable(panchayatItems);
-        } else {
-            setTable(navItems);
-        }
-    }, [visitorrole]);   
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/auth");
+  };
 
+  useEffect(() => {
+    const role = localStorage.getItem("Role");
+    setVisitorrole(role);
+  }, []);
 
-    return (
-        <>
+  useEffect(() => {
+    if (visitorrole === "citizen") {
+      setTable(citizenItems);
+    } else if (visitorrole === "panchayat") {
+      setTable(panchayatItems);
+    } else if (visitorrole === "government_monitor") {
+      setTable(govtItems);
+    } else {
+      setTable(navItems);
+    }
+  }, [visitorrole]);
 
-            <div className="w-64 h-screen  flex flex-col bg-gray-100">
-                {/* Header */}
-                <div className="p-4  flex flex-row justify-center items-center space-x-2">
-                    {/* <img src="/logo192.png" alt="" className='h-8 w-8'/> */}
-                    <h1 className="text-lg font-semibold text-center text-gray-700">
-                        GPMS
-                    </h1>
-                </div>
+  return (
+    <>
+      <div className="w-64 h-screen  flex flex-col bg-gray-100">
+        {/* Header */}
+        <div className="p-4  flex flex-row justify-center items-center space-x-2">
+          {/* <img src="/logo192.png" alt="" className='h-8 w-8'/> */}
+          <h1 className="text-lg font-semibold text-center text-gray-700">
+            GPMS
+          </h1>
+        </div>
 
-                {/* Navigation Links */}
-                <nav className="flex-1 p-2 space-y-1 overflow-auto no-scrollbar">
-                    {table.map((item) => (
-                        <NavLink
-                            key={item.to}
-                            to={item.to}
-                            className={({ isActive }) =>
-                                `flex items-center px-3 py-2 rounded-md text-sm font-medium transition ${isActive
-                                    ? "bg-white text-black font-semibold"
-                                    : "text-gray-600 hover:bg-gray-100"
-                                }`
-                            }
-                        >
-                            <i className={`bx ${item.icon} text-xl mr-3`}></i>
-                            <span className="">
-                                {item.name}
-                            </span>
-                        </NavLink>
-                    ))}
-                </nav>
+        {/* Navigation Links */}
+        <nav className="flex-1 p-2 space-y-1 overflow-auto no-scrollbar">
+          {table.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `flex items-center px-3 py-2 rounded-md text-sm font-medium transition ${
+                  isActive
+                    ? "bg-white text-black font-semibold"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`
+              }
+            >
+              <i className={`bx ${item.icon} text-xl mr-3`}></i>
+              <span className="">{item.name}</span>
+            </NavLink>
+          ))}
+        </nav>
 
+        <div className="p-4 ">
+          <NavLink
+            to="/dashboard/update"
+            className={({ isActive }) =>
+              `flex items-center px-3 py-2 rounded-md text-sm font-medium transition ${
+                isActive
+                  ? "bg-gray-200 text-black font-semibold"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`
+            }
+          >
+            <i className={`bx bxs-edit-location text-xl mr-3`}></i>
+            Update
+          </NavLink>
 
-                <div className="p-4 ">
-             
-                    <NavLink
-                        to="/login"
-                        className={({ isActive }) =>
-                            `flex items-center px-3 py-2 rounded-md text-sm font-medium transition ${isActive
-                                ? "bg-gray-200 text-black font-semibold"
-                                : "text-gray-600 hover:bg-gray-100"
-                            }`
-                        }
-                    >
-                        <i className={`bx bx-log-out text-xl mr-3`}></i>
-                        logout
-                    </NavLink>
-
-                </div>
-            </div>
-        </>
-    );
+          <NavLink
+            to=""
+            className={({ isActive }) =>
+              `flex items-center px-3 py-2 rounded-md text-sm font-medium transition ${
+                isActive
+                  ? "bg-gray-200 text-black font-semibold"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`
+            }
+            onClick={(e) => {
+              e.preventDefault(); // Prevent default link behavior
+              handleLogout(); // Trigger the logout logic
+            }}
+          >
+            <i className="bx bx-log-out text-xl mr-3"></i>
+            Logout
+          </NavLink>
+        </div>
+      </div>
+    </>
+  );
 };
 
 export default Sidebar;
