@@ -77,8 +77,15 @@ const AuthPage = () => {
 
 			const data = await response.json();
 			if (response.ok) {
+				console.log(role);
+				if (endpoint === "/register") {
+				  localStorage.setItem("Role", role);
+				} else {
+				  localStorage.setItem("Role", data.role);
+				}
+				localStorage.setItem("Username", username);
 				alert(data.message);
-				navigate("/dashboard");
+				navigate("/dashboard/agricultural_data");
 			} else {
 				alert(data.error || 'Something went wrong. Please try again.');
 			}
