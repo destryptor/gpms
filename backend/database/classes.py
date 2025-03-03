@@ -84,7 +84,7 @@ class Scheme(db.Model):
     beneficiaries = relationship('Citizen', secondary=citizen_scheme, back_populates='schemes')
 
 class AgriculturalData(db.Model):
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     area_in_hectares = Column(Integer, nullable=False)
     crops_grown = Column(ARRAY(String))
     citizen_id = Column(Integer, ForeignKey('citizen.id'))
@@ -139,7 +139,7 @@ class Tax(db.Model):
     payer = relationship('Citizen', back_populates='taxes')
 
 class Service(db.Model):
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     type = Column(String)
     issued_date = Column(Date, nullable=False)

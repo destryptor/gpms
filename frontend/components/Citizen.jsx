@@ -297,7 +297,8 @@ export default function Citizen() {
       </div>
 
       {/* Search bar */}
-      <div className="mt-4 mb-4">
+      {visitorrole !== 'panchayat' && (
+        <div className="mt-4 mb-4">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <svg
@@ -336,6 +337,8 @@ export default function Citizen() {
         </div>
       </div>
 
+      )}
+      
       {visitorrole === "government_monitor" && (
         <>
           <div className="mt-6">

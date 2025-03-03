@@ -8,6 +8,7 @@ from database.classes import *
 from sqlalchemy import text
 from sqlalchemy import insert
 from sqlalchemy.orm import aliased
+from sqlalchemy.exc import SQLAlchemyError
 import datetime
 
 
@@ -195,11 +196,18 @@ def agricult_routes(app):
     @app.route('/fetch_citizen_data_for_agriculture', methods=['GET'])
     def fetch_citizen_data_for_agri():
         try:
-            citizens = Citizen.query.all()
-            data_list = [{'id': citizen.id, 'name': citizen.name} for citizen in citizens]
-            return jsonify(data_list), 200
-        except Exception as e:
-            print("Error:", e)
+            query = text("""
+                SELECT c.id, c.name, clp.panchayat_id
+                FROM citizen c
+                JOIN citizen_lives_in_panchayat clp ON c.id = clp.citizen_id
+            """)
+            result = db.session.execute(query)
+            citizens = [{'id': row[0], 'name': row[1], 'panchayat_id': row[2]} for row in result]
+
+            return jsonify(citizens), 200
+
+        except SQLAlchemyError as e:
+            print("Error:", str(e))
             return jsonify({'error': str(e)}), 500
 
     @app.route('/add_agriculture_data', methods=['POST'])
@@ -223,7 +231,7 @@ def agricult_routes(app):
     def update_agriculture_data():
         try:
             data = request.get_json()
-            record = AgriculturalData.query.get(data.get('id'))
+            record = AgriculturalData.query.get(data.get('agriculture_id'))
             if not record:
                 return jsonify({'error': 'Record not found'}), 404
 
@@ -684,6 +692,32 @@ def panchayat_member_routes(app):
                 'citizen_id': member.citizen_id,
                 'panchayat_id': member.panchayat_id,
                 'role': member.role,
+                'panchayat_name': panchayat.name if panchayat else "Unknown"
+            }
+            
+            return jsonify(result), 200
+        except Exception as e:
+            print("Error:", e)
+            return jsonify({'error': str(e)}), 500
+        
+    @app.route('/fetch_panchayat_by_citizen/<int:user_id>', methods=['GET'])
+    def fetch_panchayat_by_citizen(user_id):
+        try:
+            
+            citizen_id = db.session.query(CitizenUser).filter_by(user_id=user_id).first().citizen_id
+            print(citizen_id)
+            # Query the association table for specific citizen
+            member = db.session.query(citizen_lives_in_panchayat).filter_by(citizen_id=citizen_id).first()
+            print(member)
+            if not member:
+                return jsonify({"error": "Citizen is not a resident of any panchayat"}), 404
+                
+            # Get panchayat details
+            panchayat = db.session.query(Panchayat).filter_by(id=member.panchayat_id).first()
+            
+            result = {
+                'citizen_id': member.citizen_id,
+                'panchayat_id': member.panchayat_id,
                 'panchayat_name': panchayat.name if panchayat else "Unknown"
             }
             
@@ -1476,8 +1510,8 @@ def services_route(app):
                     'service_expiry_date': srv.expiry_date.isoformat() if srv.expiry_date else None,
                     'citizen_id': cit.id,
                     'citizen_name': cit.name,
-                    'panchayat_id': panchayat.id,
-                    'panchayat_name': panchayat.name
+                    'issuing_panchayat_id': srv.issuing_panchayat_id,
+                    'issuing_panchayat_name': panchayat.name
                 }
                 for srv, cit, panchayat in result
             ]
@@ -1498,7 +1532,8 @@ def services_route(app):
                 type=data.get("service_type"),
                 issued_date=issued_date,
                 expiry_date=expiry_date,
-                availing_citizen_id=data.get("availing_citizen_id")
+                availing_citizen_id=data.get("availing_citizen_id"),
+                issuing_panchayat_id=data.get("issuing_panchayat_id")
             )
             db.session.add(new_service)
             db.session.commit()

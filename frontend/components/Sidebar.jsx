@@ -49,7 +49,7 @@ const citizenItems = [
 
 const panchayatItems = [
   { name: "Panchayat", to: "/dashboard/panchayat", icon: "bxs-data" },
-  { name: "Scheme", to: "/dashboard/scheme", icon: "bxs-data" },
+  { name: "Scheme", to: "/dashboard/citizen_benefits_from_schemes", icon: "bxs-data" },
   { name: "Service", to: "/dashboard/service", icon: "bxs-data" },
   { name: "Asset", to: "/dashboard/asset", icon: "bxs-data" },
   {
@@ -160,19 +160,6 @@ const Sidebar = () => {
         </nav>
 
         <div className="p-4 ">
-          <NavLink
-            to="/dashboard/update"
-            className={({ isActive }) =>
-              `flex items-center px-3 py-2 rounded-md text-sm font-medium transition ${
-                isActive
-                  ? "bg-gray-200 text-black font-semibold"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`
-            }
-          >
-            <i className={`bx bxs-edit-location text-xl mr-3`}></i>
-            Update
-          </NavLink>
 
           <NavLink
             to=""

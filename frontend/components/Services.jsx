@@ -14,6 +14,7 @@ export default function Services() {
   const [visitorrole, setVisitorrole] = useState(localStorage.getItem("Role"));
   const [visitorid, setVisitorid] = useState(localStorage.getItem("Userid"));
   const [visitorpanchayat, setVisitorpanchayat] = useState("");
+  const [panchayatData, setPanchayatData] = useState([]);
   const [newService, setNewService] = useState({
     id: null,
     service_name: "",
@@ -21,6 +22,7 @@ export default function Services() {
     service_issued_date: "",
     service_expiry_date: "",
     availing_citizen_id: "",
+    issuing_panchayat_id: "",
   });
   let ind = 0;
   useEffect(() => {
@@ -35,6 +37,8 @@ export default function Services() {
       .then((data) => {
         setServicesData(Array.isArray(data) ? data : []);
         setFilteredData(data);
+        // console.log(data);
+        
         const newSchememap = {};
         data.forEach((item) => {
           if (newSchememap[item.service_name]) {
@@ -50,6 +54,16 @@ export default function Services() {
         console.error("Error fetching services data:", error);
         setError(error.message);
         setLoading(false);
+      });
+
+      fetch("http://localhost:5000/fetch_panchayat_data")
+      .then((res) => res.json())
+      .then((data) => {
+        setPanchayatData(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching panchayat data:", error);
+        toast.error("Error fetching panchayat data!");
       });
   }, []);
 
@@ -163,6 +177,9 @@ export default function Services() {
     e.preventDefault();
     if (!validateForm()) return;
 
+    if (visitorrole === "panchayat") {
+      newService.issuing_panchayat_id = visitorpanchayat;
+    }
     const endpoint = isEditMode
       ? `http://localhost:5000/update_service/${newService.id}`
       : "http://localhost:5000/add_service";
@@ -218,8 +235,12 @@ export default function Services() {
     }
   };
 
-  const filteredServices = servicesData.filter((item) =>
-    item.service_name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredServices = servicesData.filter((item) => {
+    if (visitorrole === "panchayat") {
+      return item.issuing_panchayat_id === visitorpanchayat && item.service_name.toLowerCase().includes(searchQuery.toLowerCase());
+    }
+    return item.service_name.toLowerCase().includes(searchQuery.toLowerCase())
+  }
   );
 
   return (
@@ -581,6 +602,27 @@ export default function Services() {
                       ))}
                     </select>
                   </div>
+                  {visitorrole === "admin" && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Issuing Panchayat
+                    </label>
+                    <select
+                      name="issuing_panchayat_id"
+                      value={newService.issuing_panchayat_id}
+                      onChange={handleChange}
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="">Select Panchayat</option>
+                      {panchayatData.map((citizen) => (
+                        <option key={citizen.id} value={citizen.id}>
+                          {citizen.id} - {citizen.name || "Unknown"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  )}
                   <div className="flex justify-end gap-2">
                     <button
                       type="button"
