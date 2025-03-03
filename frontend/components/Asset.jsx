@@ -43,7 +43,6 @@ export default function AssetList() {
       .then((res) => res.json())
       .then((data) => {
         setPanchayat(data);
-        console.log(data);
       })
       .catch((error) => {
         toast.error("Error fetching panchayat data:", error);
@@ -421,19 +420,12 @@ export default function AssetList() {
                 />
               </div>
               {/* Panchayat ID */}
-              {visitorrole !== "panchayat" && (
+              {visitorrole === "admin" && (
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Panchayat ID
                   </label>
-                  {/* <input
-                  type="number"
-                  name="panchayat_id"
-                  value={newAsset.panchayat_id}
-                  onChange={handleChange}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  required
-                /> */}
+
                   <select
                     name="panchayat_id"
                     className="w-full px-3 py-2 border rounded-lg"

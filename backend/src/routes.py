@@ -908,6 +908,42 @@ def scheme_routes(app):
             print("Error:", e)
             return jsonify({'error': str(e)}), 500
 
+
+    @app.route('/fetch_schemes_benefit_citizen/<int:user_id>',methods=['GET'])
+    def fetch_schemes_benefit_citizen(user_id):
+        try:
+            result = (
+                    db.session.query(Scheme, Citizen,Panchayat,CitizenUser)
+                    .join(citizen_scheme, citizen_scheme.c.citizen_id == Citizen.id)  
+                    .join(Scheme, Scheme.id == citizen_scheme.c.scheme_id)
+                    .join(citizen_lives_in_panchayat,citizen_lives_in_panchayat.c.citizen_id==Citizen.id)
+                    .join(Panchayat,citizen_lives_in_panchayat.c.panchayat_id == Panchayat.id)
+                    .join(CitizenUser,Citizen.id == CitizenUser.citizen_id)
+                    .filter(CitizenUser.user_id == user_id)  
+                    .all()
+                     )
+
+
+            result_list = [
+                {
+                    'scheme_id': sch.id,
+                    'scheme_name': sch.name,
+                    'scheme_gov_id': sch.gov_id,
+                    'scheme_description': sch.description,
+                    'citizen_id': cit.id,
+                    'citizen_name': cit.name,
+                    'panchayat_name':panch.name
+                }
+                for sch, cit,panch,cu in result
+            ]
+
+            return jsonify(result_list), 200
+        except Exception as e:
+            print("Error:", e)
+            return jsonify({'error': str(e)}), 500
+
+
+
 def asset_routes(app):
 
     @app.route('/fetch_assets', methods=['GET'])
@@ -1335,6 +1371,7 @@ def tax_route(app):
                 monitoring_gov_id=data.get('monitoring_gov_id'),
                 paying_citizen_id=data.get('paying_citizen_id')
             )
+            print(new_tax)
             db.session.add(new_tax)
             db.session.commit()
             return jsonify({
@@ -1514,6 +1551,38 @@ def services_route(app):
                     'issuing_panchayat_name': panchayat.name
                 }
                 for srv, cit, panchayat in result
+            ]
+            return jsonify(services_list), 200
+        except Exception as e:
+            print("Error fetching services:", e)
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/fetch_services_by_citizen/<int:user_id>', methods=['GET'])
+    def fetch_services_citizen(user_id):
+        try:
+            result = (
+                db.session.query(Service, Citizen, Panchayat,CitizenUser)
+                .join(Citizen, Service.availing_citizen_id == Citizen.id)
+                .join(citizen_lives_in_panchayat, Citizen.id == citizen_lives_in_panchayat.c.citizen_id)
+                .join(Panchayat, Panchayat.id == citizen_lives_in_panchayat.c.panchayat_id)
+                .join(CitizenUser,Citizen.id == CitizenUser.citizen_id)
+                .filter(CitizenUser.user_id == user_id)
+                .all()
+            )
+            
+            services_list = [
+                {
+                    'service_id': srv.id,
+                    'service_name': srv.name,
+                    'service_type': srv.type,
+                    'service_issued_date': srv.issued_date.isoformat(),
+                    'service_expiry_date': srv.expiry_date.isoformat() if srv.expiry_date else None,
+                    'citizen_id': cit.id,
+                    'citizen_name': cit.name,
+                    'issuing_panchayat_id': srv.issuing_panchayat_id,
+                    'issuing_panchayat_name': panchayat.name
+                }
+                for srv, cit, panchayat,cu in result
             ]
             return jsonify(services_list), 200
         except Exception as e:

@@ -408,12 +408,14 @@ export default function Panchayat() {
                               >
                                 Edit
                               </button>
-                              <button
-                                onClick={() => handleDelete(data.id)}
-                                className="font-medium text-red-600 hover:text-red-800 cursor-pointer"
-                              >
-                                Delete
-                              </button>
+                              {visitorrole !== "panchayat" && (
+                                <button
+                                  onClick={() => handleDelete(data.id)}
+                                  className="font-medium text-red-600 hover:text-red-800 cursor-pointer"
+                                >
+                                  Delete
+                                </button>
+                              )}
                             </div>
                           </td>
                         )}

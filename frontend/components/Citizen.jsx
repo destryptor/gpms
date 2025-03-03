@@ -224,6 +224,7 @@ export default function Citizen() {
           toast.success("Citizen data added successfully!");
         }
         closeModal();
+        window.location.reload();
       })
       .catch((error) => {
         console.error(
@@ -286,7 +287,8 @@ export default function Citizen() {
           </span>
         </div>
         {visitorrole !== "government_monitor" &&
-          visitorrole !== "panchayat" && (
+          visitorrole !== "panchayat" &&
+          visitorrole !== "admin" && (
             <button
               className="py-2 px-4 bg-[#000000] font-medium text-sm text-white rounded-lg cursor-pointer"
               onClick={() => openModal(false)}
@@ -297,48 +299,47 @@ export default function Citizen() {
       </div>
 
       {/* Search bar */}
-      {visitorrole !== 'panchayat' && (
+      {visitorrole !== "panchayat" && (
         <div className="mt-4 mb-4">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <svg
-              className="w-4 h-4 text-gray-500"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 20 20"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-              />
-            </svg>
-          </div>
-          <div className="mt-4 mb-4">
-            <div className="relative flex items-center space-x-2">
-              <input
-                type="text"
-                className="w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Search by Panchayat"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <button
-                className="py-2 px-4 bg-[#000000] font-medium text-sm text-white rounded-lg cursor-pointer"
-                onClick={handleSearch}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <svg
+                className="w-4 h-4 text-gray-500"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 20 20"
               >
-                Search
-              </button>
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
+                />
+              </svg>
+            </div>
+            <div className="mt-4 mb-4">
+              <div className="relative flex items-center space-x-2">
+                <input
+                  type="text"
+                  className="w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Search by Panchayat"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <button
+                  className="py-2 px-4 bg-[#000000] font-medium text-sm text-white rounded-lg cursor-pointer"
+                  onClick={handleSearch}
+                >
+                  Search
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
       )}
-      
+
       {visitorrole === "government_monitor" && (
         <>
           <div className="mt-6">
@@ -470,7 +471,7 @@ export default function Citizen() {
         </>
       )}
 
-      {visitorrole === "panchayat" && (
+      {(visitorrole === "panchayat" || visitorrole === "admin") && (
         <>
           <div className="mt-4">
             <div className="relative overflow-x-auto sm:rounded-lg">

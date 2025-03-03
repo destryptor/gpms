@@ -67,7 +67,7 @@ class GovernmentMonitor(db.Model):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     type = Column(String)
-    contact = Column(ARRAY(String), nullable=False)
+    contact = Column(String, nullable=False)
     website = Column(String)
     schemes = relationship('Scheme', back_populates='issued_by')
     monitoring_services = relationship('Service', foreign_keys='Service.monitoring_gov_id')
@@ -76,7 +76,7 @@ class GovernmentMonitor(db.Model):
     user = relationship('GovernmentMonitorUser', back_populates='government_monitor', uselist=False)
 
 class Scheme(db.Model):
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     description = Column(String)
     gov_id = Column(Integer, ForeignKey('government_monitor.id'))
@@ -109,7 +109,7 @@ class Citizen(db.Model):
     user = relationship('CitizenUser', back_populates='citizen', uselist=False)
 
 class Panchayat(db.Model):
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String,nullable=False)
     address = Column(JSON, nullable=False)
     income = Column(Integer, nullable=False)
@@ -121,7 +121,7 @@ class Panchayat(db.Model):
     services = relationship('Service', foreign_keys='Service.issuing_panchayat_id')
 
 class Asset(db.Model):
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     address = Column(JSON, nullable=False)
     value = Column(Integer, nullable=False)
@@ -129,7 +129,7 @@ class Asset(db.Model):
     panchayat_id = Column(Integer, ForeignKey('panchayat.id'))
 
 class Tax(db.Model):
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     amount_in_percentage = Column(Integer, nullable=False)
     tier = Column(String)

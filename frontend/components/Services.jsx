@@ -27,7 +27,11 @@ export default function Services() {
   let ind = 0;
   useEffect(() => {
     // Fetch data from the backend API endpoint
-    fetch("http://localhost:5000/fetch_services")
+    let url = "http://localhost:5000/fetch_services";
+    if (visitorrole === "citizen") {
+      url = `http://localhost:5000/fetch_services_by_citizen/${visitorid}`;
+    }
+    fetch(url)
       .then((res) => {
         if (!res.ok) {
           throw new Error("Network response was not ok");
@@ -38,7 +42,7 @@ export default function Services() {
         setServicesData(Array.isArray(data) ? data : []);
         setFilteredData(data);
         // console.log(data);
-        
+
         const newSchememap = {};
         data.forEach((item) => {
           if (newSchememap[item.service_name]) {
@@ -56,7 +60,7 @@ export default function Services() {
         setLoading(false);
       });
 
-      fetch("http://localhost:5000/fetch_panchayat_data")
+    fetch("http://localhost:5000/fetch_panchayat_data")
       .then((res) => res.json())
       .then((data) => {
         setPanchayatData(data);
@@ -101,7 +105,7 @@ export default function Services() {
   const handleSearch = () => {
     const filteredD = servicesData.filter((item) => {
       const query = searchQuery.toLowerCase();
-      return item.panchayat_name.toLowerCase().includes(query);
+      return item.issuing_panchayat_name.toLowerCase().includes(query);
     });
     const newSchememap = {};
     filteredD.forEach((item) => {
@@ -237,161 +241,199 @@ export default function Services() {
 
   const filteredServices = servicesData.filter((item) => {
     if (visitorrole === "panchayat") {
-      return item.issuing_panchayat_id === visitorpanchayat && item.service_name.toLowerCase().includes(searchQuery.toLowerCase());
+      return (
+        item.issuing_panchayat_id === visitorpanchayat &&
+        item.service_name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    } else if (visitorrole === "government_montior") {
+      return item.issuing_panchayat_name
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
     }
-    return item.service_name.toLowerCase().includes(searchQuery.toLowerCase())
-  }
-  );
+    return item.service_name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   return (
     <>
-      {visitorrole === "government_monitor" && (
+      {(visitorrole === "government_monitor" ||
+        visitorrole === "citizen" ||
+        visitorrole === "admin") && (
         <div>
           <div className="p-6 flex-1 bg-white rounded-lg h-full overflow-y-auto">
-            <div className="flex flex-row justify-between items-center">
-              <div className="flex flex-row text-center justify-center space-x-2">
-                <span className="text-lg font-semibold text-gray-700">
-                  Services Data
-                </span>
-              </div>
-            </div>
+            {(visitorrole === "government_monitor" ||
+              visitorrole === "citizen") && (
+              <>
+                <div className="flex flex-row justify-between items-center">
+                  <div className="flex flex-row text-center justify-center space-x-2">
+                    <span className="text-lg font-semibold text-gray-700">
+                      Services Data
+                    </span>
+                  </div>
+                </div>
 
-            {error && (
-              <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-md">
-                Error: {error}
-              </div>
+                {error && (
+                  <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-md">
+                    Error: {error}
+                  </div>
+                )}
+              </>
             )}
 
             <div className="mt-4">
-              <div className="relative flex items-center space-x-2">
-                <input
-                  type="text"
-                  className="w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Search by Panchayat"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button
-                  className="py-2 px-4 bg-[#000000] font-medium text-sm text-white rounded-lg cursor-pointer"
-                  onClick={handleSearch}
-                >
-                  Search
-                </button>
-              </div>
+              {visitorrole === "government_monitor" && (
+                <div className="relative flex items-center space-x-2">
+                  {visitorrole === "government_monitor" && (
+                    <input
+                      type="text"
+                      className="w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Search by Panchayat"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  )}
+                  {visitorrole === "citizen" && (
+                    <input
+                      type="text"
+                      className="w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Search by Service"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  )}
+                  <button
+                    className="py-2 px-4 bg-[#000000] font-medium text-sm text-white rounded-lg cursor-pointer"
+                    onClick={handleSearch}
+                  >
+                    Search
+                  </button>
+                </div>
+              )}
 
-              <div className="mt-8">
-                <h2 className="text-lg font-semibold text-gray-700 mb-4">
-                  Services Benefits Summary
-                </h2>
+              {visitorrole !== "citizen" && visitorrole !== "admin" && (
+                <div className="mt-8">
+                  <h2 className="text-lg font-semibold text-gray-700 mb-4">
+                    Services Benefits Summary
+                  </h2>
+                  <div className="relative overflow-x-auto sm:rounded-lg">
+                    <table className="w-full text-sm text-left rtl:text-right text-gray-500">
+                      <thead className="text-base text-gray-700 bg-gray-50 border-b">
+                        <tr>
+                          <th scope="col" className="px-6 py-3">
+                            Service Name
+                          </th>
+                          <th scope="col" className="px-6 py-3">
+                            Number of Citizens Benefitted
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.keys(serviceMap).length === 0 ? (
+                          <tr>
+                            <td colSpan="2" className="text-center py-4">
+                              No services found.
+                            </td>
+                          </tr>
+                        ) : (
+                          Object.entries(serviceMap).map(
+                            ([serviceName, numberOfCitizens]) => (
+                              <tr
+                                key={serviceName}
+                                className="cursor-pointer hover:bg-gray-50"
+                              >
+                                <td className="px-6 py-4">{serviceName}</td>
+                                <td className="px-6 py-4">
+                                  {numberOfCitizens}
+                                </td>
+                              </tr>
+                            )
+                          )
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              {(visitorrole === "government_monitor" ||
+                visitorrole === "citizen") && (
                 <div className="relative overflow-x-auto sm:rounded-lg">
                   <table className="w-full text-sm text-left rtl:text-right text-gray-500">
                     <thead className="text-base text-gray-700 bg-gray-50 border-b">
                       <tr>
                         <th scope="col" className="px-6 py-3">
+                          Service ID
+                        </th>
+                        <th scope="col" className="px-6 py-3">
                           Service Name
                         </th>
                         <th scope="col" className="px-6 py-3">
-                          Number of Citizens Benefitted
+                          Service Type
                         </th>
+                        <th scope="col" className="px-6 py-3">
+                          Issued Date
+                        </th>
+                        <th scope="col" className="px-6 py-3">
+                          Expiry Date
+                        </th>
+                        <th scope="col" className="px-6 py-3">
+                          Citizen ID
+                        </th>
+                        <th scope="col" className="px-6 py-3">
+                          Citizen Name
+                        </th>
+                        {visitorrole === "government_monitor" && (
+                          <th scope="col" className="px-6 py-3">
+                            Panchayat Name
+                          </th>
+                        )}
                       </tr>
                     </thead>
                     <tbody>
-                      {Object.keys(serviceMap).length === 0 ? (
+                      {loading ? (
                         <tr>
-                          <td colSpan="2" className="text-center py-4">
-                            No services found.
+                          <td colSpan="7" className="text-center py-4">
+                            Loading...
+                          </td>
+                        </tr>
+                      ) : servicesData.length === 0 ? (
+                        <tr>
+                          <td colSpan="7" className="text-center py-4">
+                            No data found.
                           </td>
                         </tr>
                       ) : (
-                        Object.entries(serviceMap).map(
-                          ([serviceName, numberOfCitizens]) => (
-                            <tr
-                              key={serviceName}
-                              className="cursor-pointer hover:bg-gray-50"
-                            >
-                              <td className="px-6 py-4">{serviceName}</td>
-                              <td className="px-6 py-4">{numberOfCitizens}</td>
-                            </tr>
-                          )
-                        )
+                        filteredData.map((data) => (
+                          <tr
+                            key={data.service_id}
+                            className="cursor-pointer hover:bg-gray-50"
+                          >
+                            <td className="px-6 py-4">{data.service_id}</td>
+                            <td className="px-6 py-4">{data.service_name}</td>
+                            <td className="px-6 py-4">{data.service_type}</td>
+                            <td className="px-6 py-4">
+                              {data.service_issued_date}
+                            </td>
+                            <td className="px-6 py-4">
+                              {data.service_expiry_date}
+                            </td>
+                            <td className="px-6 py-4">{data.citizen_id}</td>
+                            <td className="px-6 py-4">{data.citizen_name}</td>
+                            {visitorrole === "government_monitor" && (
+                              <td className="px-6 py-4">
+                                {data.issuing_panchayat_name}
+                              </td>
+                            )}
+                          </tr>
+                        ))
                       )}
                     </tbody>
                   </table>
                 </div>
-              </div>
-
-              <div className="relative overflow-x-auto sm:rounded-lg">
-                <table className="w-full text-sm text-left rtl:text-right text-gray-500">
-                  <thead className="text-base text-gray-700 bg-gray-50 border-b">
-                    <tr>
-                      <th scope="col" className="px-6 py-3">
-                        Service ID
-                      </th>
-                      <th scope="col" className="px-6 py-3">
-                        Service Name
-                      </th>
-                      <th scope="col" className="px-6 py-3">
-                        Service Type
-                      </th>
-                      <th scope="col" className="px-6 py-3">
-                        Issued Date
-                      </th>
-                      <th scope="col" className="px-6 py-3">
-                        Expiry Date
-                      </th>
-                      <th scope="col" className="px-6 py-3">
-                        Citizen ID
-                      </th>
-                      <th scope="col" className="px-6 py-3">
-                        Citizen Name
-                      </th>
-                      <th scope="col" className="px-6 py-3">
-                        Panchayat Name
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      <tr>
-                        <td colSpan="7" className="text-center py-4">
-                          Loading...
-                        </td>
-                      </tr>
-                    ) : servicesData.length === 0 ? (
-                      <tr>
-                        <td colSpan="7" className="text-center py-4">
-                          No data found.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredData.map((data) => (
-                        <tr
-                          key={data.service_id}
-                          className="cursor-pointer hover:bg-gray-50"
-                        >
-                          <td className="px-6 py-4">{data.service_id}</td>
-                          <td className="px-6 py-4">{data.service_name}</td>
-                          <td className="px-6 py-4">{data.service_type}</td>
-                          <td className="px-6 py-4">
-                            {data.service_issued_date}
-                          </td>
-                          <td className="px-6 py-4">
-                            {data.service_expiry_date}
-                          </td>
-                          <td className="px-6 py-4">{data.citizen_id}</td>
-                          <td className="px-6 py-4">{data.citizen_name}</td>
-                          <td className="px-6 py-4">{data.panchayat_name}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              )}
             </div>
           </div>
         </div>
       )}
-      {visitorrole === "panchayat" && (
+      {(visitorrole === "panchayat" || visitorrole === "admin") && (
         <div className="p-6 flex-1 bg-white rounded-lg h-full overflow-y-auto">
           <div className="flex flex-row justify-between items-center">
             <span className="text-lg font-semibold text-gray-700">
@@ -603,25 +645,25 @@ export default function Services() {
                     </select>
                   </div>
                   {visitorrole === "admin" && (
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Issuing Panchayat
-                    </label>
-                    <select
-                      name="issuing_panchayat_id"
-                      value={newService.issuing_panchayat_id}
-                      onChange={handleChange}
-                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Select Panchayat</option>
-                      {panchayatData.map((citizen) => (
-                        <option key={citizen.id} value={citizen.id}>
-                          {citizen.id} - {citizen.name || "Unknown"}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Issuing Panchayat
+                      </label>
+                      <select
+                        name="issuing_panchayat_id"
+                        value={newService.issuing_panchayat_id}
+                        onChange={handleChange}
+                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select Panchayat</option>
+                        {panchayatData.map((citizen) => (
+                          <option key={citizen.id} value={citizen.id}>
+                            {citizen.id} - {citizen.name || "Unknown"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   )}
                   <div className="flex justify-end gap-2">
                     <button

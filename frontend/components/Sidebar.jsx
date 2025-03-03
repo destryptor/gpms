@@ -10,11 +10,6 @@ const navItems = [
   },
   { name: "Asset", to: "/dashboard/asset", icon: "bxs-data" },
   {
-    name: "Citizen Benefits From Schemes",
-    to: "/dashboard/citizen_benefits_from_schemes",
-    icon: "bxs-data",
-  },
-  {
     name: "Citizen Member Of Panchayat",
     to: "/dashboard/citizen_member_of_panchayat",
     icon: "bxs-data",
@@ -36,7 +31,7 @@ const navItems = [
 const citizenItems = [
   { name: "Family Member", to: "/dashboard/family_member", icon: "bxs-data" },
   {
-    name: "Citizen Benefits From Schemes",
+    name: "Schemes availed",
     to: "/dashboard/citizen_benefits_from_schemes",
     icon: "bxs-data",
   },
@@ -45,11 +40,16 @@ const citizenItems = [
     to: "/dashboard/agricultural_data",
     icon: "bxs-data",
   },
+  { name: "Services availed", to: "/dashboard/service", icon: "bxs-data" },
 ];
 
 const panchayatItems = [
   { name: "Panchayat", to: "/dashboard/panchayat", icon: "bxs-data" },
-  { name: "Scheme", to: "/dashboard/citizen_benefits_from_schemes", icon: "bxs-data" },
+  {
+    name: "Scheme",
+    to: "/dashboard/citizen_benefits_from_schemes",
+    icon: "bxs-data",
+  },
   { name: "Service", to: "/dashboard/service", icon: "bxs-data" },
   { name: "Asset", to: "/dashboard/asset", icon: "bxs-data" },
   {
@@ -160,7 +160,6 @@ const Sidebar = () => {
         </nav>
 
         <div className="p-4 ">
-
           <NavLink
             to=""
             className={({ isActive }) =>

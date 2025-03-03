@@ -138,6 +138,7 @@ export default function Tax() {
         } else {
           setTaxData([...taxData, data.data]);
           toast.success("Tax data added successfully!");
+          window.location.reload();
         }
         closeModal();
       })
