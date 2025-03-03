@@ -26,7 +26,6 @@ export default function Services() {
   });
   let ind = 0;
   useEffect(() => {
-    // Fetch data from the backend API endpoint
     let url = "http://localhost:5000/fetch_services";
     if (visitorrole === "citizen") {
       url = `http://localhost:5000/fetch_services_by_citizen/${visitorid}`;
@@ -72,7 +71,6 @@ export default function Services() {
   }, []);
 
   useEffect(() => {
-    // Fetch data from the backend API endpoint
     fetch("http://localhost:5000/fetch_citizen_data")
       .then((res) => res.json())
       .then((data) => {

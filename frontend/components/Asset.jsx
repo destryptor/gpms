@@ -38,7 +38,6 @@ export default function AssetList() {
   }, [visitorrole]);
 
   useEffect(() => {
-    // Fetch data from the backend API endpoint
     fetch("http://localhost:5000/fetch_panchayat_data")
       .then((res) => res.json())
       .then((data) => {
@@ -107,7 +106,7 @@ export default function AssetList() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Check if we are updating a nested asset_address field
+
     if (name.startsWith("asset_address.")) {
       const addressField = name.split(".")[1];
       setNewAsset({

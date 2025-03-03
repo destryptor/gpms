@@ -58,7 +58,6 @@ const panchayatItems = [
     icon: "bxs-data",
   },
   { name: "Citizen", to: "/dashboard/citizen", icon: "bxs-data" },
-  // { name: "Family Member", to: "/dashboard/family_member", icon: "bxs-data" }
 ];
 
 const govtItems = [
@@ -170,8 +169,8 @@ const Sidebar = () => {
               }`
             }
             onClick={(e) => {
-              e.preventDefault(); // Prevent default link behavior
-              handleLogout(); // Trigger the logout logic
+              e.preventDefault();
+              handleLogout();
             }}
           >
             <i className="bx bx-log-out text-xl mr-3"></i>

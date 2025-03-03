@@ -6,7 +6,7 @@ export default function Agricultural() {
   const [citizenData, setCitizenData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState("add"); // "add" or "update"
+  const [modalMode, setModalMode] = useState("add");
   const [searchTerm, setSearchTerm] = useState("");
   const [visitorrole, setVisitorrole] = useState(localStorage.getItem("Role"));
   const [filteredData, setFilteredData] = useState([]);
@@ -14,7 +14,6 @@ export default function Agricultural() {
   const [visitorid, setVisitorid] = useState(localStorage.getItem("Userid"));
   const [visitorpanchayat, setVisitorpanchayat] = useState("");
 
-  // Form state
   const [formData, setFormData] = useState({
     id: "",
     address: {
@@ -31,12 +30,11 @@ export default function Agricultural() {
   useEffect(() => {
     fetchPanchayat();
 
-    // If user is neither 'panchayat' nor 'citizen', fetch agriculture data immediately
     if (visitorrole !== "panchayat" && visitorrole !== "citizen") {
       fetchAgricultureData();
       fetchCitizenData();
     }
-  }, []); // Runs on mount
+  }, []);
 
   useEffect(() => {
     if (
@@ -46,7 +44,7 @@ export default function Agricultural() {
       fetchAgricultureData();
       fetchCitizenData();
     }
-  }, [visitorpanchayat]); // Runs when visitorpanchayat updates
+  }, [visitorpanchayat]);
 
   const fetchPanchayat = async () => {
     if (visitorrole === "panchayat") {
@@ -79,7 +77,6 @@ export default function Agricultural() {
     fetch("http://localhost:5000/fetch_agriculture_data")
       .then((res) => res.json())
       .then((data) => {
-        // console.log(data);
         setAgricultureData(data);
         setFilteredData(data);
         const newCropmap = {};
@@ -232,13 +229,10 @@ export default function Agricultural() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Prepare data for submission
     const submissionData = {
       ...formData,
       crops_grown: formData.crops_grown.split(",").map((crop) => crop.trim()),
     };
-
-    // console.log(submissionData);
 
     const endpoint =
       modalMode === "add"

@@ -19,7 +19,6 @@ export default function Tax() {
     paying_citizen_id: "",
   });
 
-  // Fetch tax data on mount
   useEffect(() => {
     fetchTaxData();
     fetchGovernmentMonitors();
@@ -53,7 +52,6 @@ export default function Tax() {
   };
 
   const fetchCitizens = () => {
-    // Assuming you use this endpoint for a simple list of citizens (id and name)
     fetch("http://localhost:5000/fetch_citizen_data_for_agriculture")
       .then((res) => res.json())
       .then((data) => {
@@ -104,7 +102,7 @@ export default function Tax() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Basic validation: all fields must be filled
+
     if (
       !newTax.name ||
       !newTax.amount_in_percentage ||
@@ -165,7 +163,6 @@ export default function Tax() {
     }
   };
 
-  // Filter tax data based on search query (by tax name)
   const filteredData = taxData.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );

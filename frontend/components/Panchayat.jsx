@@ -25,7 +25,6 @@ export default function Panchayat() {
     environmental_data: {},
   });
 
-  // State for environmental data fields
   const [envFields, setEnvFields] = useState([{ key: "", value: "" }]);
 
   const formatEnvironmentalData = (data) => {
@@ -48,7 +47,6 @@ export default function Panchayat() {
   }, [visitorrole]);
 
   useEffect(() => {
-    // Fetch data from the backend API endpoint
     fetch("http://localhost:5000/fetch_panchayat_data")
       .then((res) => res.json())
       .then((data) => {
@@ -69,7 +67,6 @@ export default function Panchayat() {
     setIsEditMode(isEdit);
 
     if (isEdit && data) {
-      // Convert environmental_data to array format for editing
       const envDataArray = Object.entries(data.environmental_data).map(
         ([key, value]) => ({
           key,
@@ -89,7 +86,6 @@ export default function Panchayat() {
         environmental_data: { ...data.environmental_data },
       });
     } else {
-      // Reset form for adding new data
       setNewPanchayat({
         id: null,
         name: "",
@@ -118,7 +114,6 @@ export default function Panchayat() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Handle address fields
     if (name.startsWith("address.")) {
       const addressField = name.split(".")[1];
       setNewPanchayat({
@@ -129,7 +124,6 @@ export default function Panchayat() {
         },
       });
     } else {
-      // Handle other fields
       setNewPanchayat({
         ...newPanchayat,
         [name]: value,
@@ -137,13 +131,11 @@ export default function Panchayat() {
     }
   };
 
-  // Handle changes to environmental data fields
   const handleEnvFieldChange = (index, field, value) => {
     const updatedFields = [...envFields];
     updatedFields[index][field] = value;
     setEnvFields(updatedFields);
 
-    // Update the environmental_data object in newPanchayat
     const envData = {};
     updatedFields.forEach((field) => {
       if (field.key && field.value) {
@@ -157,18 +149,15 @@ export default function Panchayat() {
     });
   };
 
-  // Add a new environmental field
   const addEnvField = () => {
     setEnvFields([...envFields, { key: "", value: "" }]);
   };
 
-  // Remove an environmental field
   const removeEnvField = (index) => {
     if (envFields.length > 1) {
       const updatedFields = envFields.filter((_, i) => i !== index);
       setEnvFields(updatedFields);
 
-      // Update the environmental_data object
       const envData = {};
       updatedFields.forEach((field) => {
         if (field.key && field.value) {
@@ -206,7 +195,6 @@ export default function Panchayat() {
       return false;
     }
 
-    // Validate that at least one environmental data field is filled
     if (Object.keys(newPanchayat.environmental_data).length === 0) {
       toast.error("At least one environmental data field is required!");
       return false;
@@ -218,7 +206,6 @@ export default function Panchayat() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validate form fields
     if (!validateForm()) return;
 
     const endpoint = isEditMode
@@ -227,7 +214,6 @@ export default function Panchayat() {
 
     const method = isEditMode ? "PUT" : "POST";
 
-    // Send data to backend
     fetch(endpoint, {
       method: method,
       headers: {
@@ -238,7 +224,6 @@ export default function Panchayat() {
       .then((res) => res.json())
       .then((data) => {
         if (isEditMode) {
-          // Update the local state with the updated data
           setPanchayatData(
             panchayatdata.map((item) =>
               item.id === newPanchayat.id ? data.data : item
@@ -246,7 +231,6 @@ export default function Panchayat() {
           );
           toast.success("Panchayat data updated successfully!");
         } else {
-          // Update the local state with the new data
           setPanchayatData([...panchayatdata, data.data]);
           toast.success("Panchayat data added successfully!");
         }
@@ -282,7 +266,6 @@ export default function Panchayat() {
     }
   };
 
-  // Filter data based on search query
   const filteredData = panchayatdata.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );

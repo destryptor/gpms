@@ -40,7 +40,7 @@ export default function GovtMonitors() {
         id: data.id,
         name: data.name,
         type: data.type,
-        // Convert the contact array into a comma-separated string for editing
+
         contact: Array.isArray(data.contact)
           ? data.contact.join(", ")
           : data.contact,
@@ -70,7 +70,7 @@ export default function GovtMonitors() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Validate all fields are filled
+
     if (
       !newGovMon.name ||
       !newGovMon.type ||
@@ -81,7 +81,6 @@ export default function GovtMonitors() {
       return;
     }
 
-    // Convert the contact string to an array (assuming comma-separated values)
     const payload = {
       ...newGovMon,
       contact: newGovMon.contact.split(",").map((item) => item.trim()),
@@ -137,7 +136,6 @@ export default function GovtMonitors() {
     }
   };
 
-  // Filter data based on search query (by monitor name)
   const filteredData = govMonData.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );

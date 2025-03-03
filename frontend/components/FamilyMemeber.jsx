@@ -20,8 +20,6 @@ export default function FamilyMember() {
   // }, []);
 
   useEffect(() => {
-    // Fetch family member data
-
     fetch("http://localhost:5000/fetch_family_member")
       .then((res) => res.json())
       .then((data) => {
@@ -40,7 +38,6 @@ export default function FamilyMember() {
         setLoading(false);
       });
 
-    // Fetch citizens for dropdown selection
     fetch("http://localhost:5000/fetch_citizens")
       .then((res) => res.json())
       .then((data) => {
@@ -62,7 +59,6 @@ export default function FamilyMember() {
         relationship: data.relationship,
       });
     } else {
-      // Reset form for adding new relationship
       setNewFamilyMember({
         citizen_id: "",
         family_member_id: "",
@@ -113,7 +109,6 @@ export default function FamilyMember() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validate form fields
     if (!validateForm()) return;
 
     const endpoint = isEditMode
@@ -122,7 +117,6 @@ export default function FamilyMember() {
 
     const method = isEditMode ? "PUT" : "POST";
 
-    // Send data to backend
     fetch(endpoint, {
       method: method,
       headers: {
@@ -138,7 +132,6 @@ export default function FamilyMember() {
         }
 
         if (isEditMode) {
-          // Update the local state with the updated data
           setFamilyMemberData(
             familyMemberData.map((item) =>
               item.citizen_id === newFamilyMember.citizen_id &&
@@ -149,13 +142,11 @@ export default function FamilyMember() {
           );
           toast.success("Family relationship updated successfully!");
         } else {
-          // Update the local state with the new data
           setFamilyMemberData([...familyMemberData, data.data]);
           toast.success("Family relationship added successfully!");
         }
         closeModal();
 
-        // Refresh the data to ensure we have the latest
         fetch("http://localhost:5000/fetch_family_member")
           .then((res) => res.json())
           .then((data) => {
@@ -214,7 +205,6 @@ export default function FamilyMember() {
     }
   };
 
-  // Filter data based on search query
   const filteredData = familyMemberData.filter(
     (item) =>
       item.citizen_name.toLowerCase().includes(searchQuery.toLowerCase()) ||

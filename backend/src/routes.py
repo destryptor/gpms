@@ -191,7 +191,7 @@ def agricult_routes(app):
             print("Error:", e)
             return jsonify({'error': str(e)}), 500
         
-#  id | address | income | expenditure | environmental_data 
+
 
     @app.route('/fetch_citizen_data_for_agriculture', methods=['GET'])
     def fetch_citizen_data_for_agri():
@@ -264,22 +264,22 @@ def agricult_routes(app):
 def panchayat_routes(app):
     @app.route('/add_panchayat_data', methods=['POST'])
     def add_panchayat_data():
-        data = request.get_json()  # Using get_json() to properly parse the incoming JSON data
+        data = request.get_json()  
         try:
             print("Received data:", data)
-            # Create a new Panchayat record using the nested address and environmental_data directly
+            
             new_panchayat = Panchayat(
-                name=data.get('name'),  # Assuming you have a 'name' field
-                address=data.get('address'),  # expecting a dict with village, street, district, state, pincode
-                income=float(data.get('income')),  # convert to float if necessary
-                expenditure=float(data.get('expenditure')),  # convert to float if necessary
-                environmental_data=data.get('environmental_data')  # expecting a dict
+                name=data.get('name'),  
+                address=data.get('address'),  
+                income=float(data.get('income')),  
+                expenditure=float(data.get('expenditure')),  
+                environmental_data=data.get('environmental_data')  
             )
             db.session.add(new_panchayat)
             db.session.commit()
             print("Panchayat data added successfully!")
             
-            # Prepare the response data ensuring the same structure as expected by React
+            
             new_panchayat_data = {
                 'id': new_panchayat.id,
                 'name': new_panchayat.name,
@@ -302,11 +302,11 @@ def panchayat_routes(app):
             for p in panchayats:
                 panchayat_list.append({
                     'id': p.id,
-                    'name': p.name,  # Assuming you have a 'name'
-                    'address': p.address,  # address should be a dict with keys: village, street, district, state, pincode
+                    'name': p.name,  
+                    'address': p.address,  
                     'income': p.income,
                     'expenditure': p.expenditure,
-                    'environmental_data': p.environmental_data  # expecting a dict of environmental data
+                    'environmental_data': p.environmental_data  
                 })
             return jsonify(panchayat_list), 200
         except Exception as e:
@@ -321,7 +321,7 @@ def panchayat_routes(app):
             if not panchayat:
                 return jsonify({"error": "Panchayat not found!"}), 404
 
-            # Update fields with new data or fallback to the existing value
+            
             panchayat.name = data.get('name', panchayat.name)
             panchayat.address = data.get('address', panchayat.address)
             panchayat.income = float(data.get('income', panchayat.income))
@@ -364,11 +364,11 @@ def citizen_routes(app):
     @app.route('/fetch_citizen_data', methods=['GET'])
     def fetch_citizen_data():
         try:
-            # Join Citizen, citizen_lives_in_panchayat, and Panchayat to fetch required fields
+            
             results = db.session.query(
                 Citizen,
                 Panchayat.name.label('panchayat_name'),
-                Panchayat.id.label('panchayat_id')  # Add panchayat ID to the query
+                Panchayat.id.label('panchayat_id')  
             ).join(
                 citizen_lives_in_panchayat, Citizen.id == citizen_lives_in_panchayat.c.citizen_id
             ).join(
@@ -376,7 +376,7 @@ def citizen_routes(app):
             ).all()
 
             data_list = []
-            for citizen, panchayat_name, panchayat_id in results:  # Add panchayat_id to unpacking
+            for citizen, panchayat_name, panchayat_id in results:  
                 data_list.append({
                     'id': citizen.id,
                     'name': citizen.name,
@@ -388,7 +388,7 @@ def citizen_routes(app):
                     'phone_number': citizen.phone_number,
                     'income': citizen.income,
                     'panchayat_name': panchayat_name,
-                    'panchayat_id': panchayat_id  # Add panchayat_id to the response
+                    'panchayat_id': panchayat_id  
                 })
             return jsonify(data_list), 200
         except Exception as e:
@@ -397,9 +397,9 @@ def citizen_routes(app):
 
     @app.route('/add_citizen_data', methods=['POST'])
     def add_citizen_data():
-        data = request.get_json()  # Parse the incoming JSON data
+        data = request.get_json()   
         try:
-            # Create a new Citizen record using the provided data
+           
             new_citizen = Citizen(
                 name=data.get('name'),
                 date_of_birth=data.get('date_of_birth'),
@@ -442,13 +442,13 @@ def citizen_routes(app):
 
     @app.route('/update_citizen_data/<int:id>', methods=['PUT'])
     def update_citizen_data(id):
-        data = request.get_json()  # Parse the incoming JSON data
+        data = request.get_json()  
         try:
             citizen = Citizen.query.get(id)
             if not citizen:
                 return jsonify({"error": "Citizen not found!"}), 404
 
-            # Update fields using new data if provided, otherwise keep the existing value
+            
             citizen.name = data.get('name', citizen.name)
             citizen.date_of_birth = data.get('date_of_birth', citizen.date_of_birth)
             citizen.sex = data.get('sex', citizen.sex)
@@ -499,24 +499,24 @@ def panchayat_member_routes(app):
         try:
             citizen_id = data['citizen_id']
             panchayat_id = data['panchayat_id']
-            role = data.get('role')  # Optional field
+            role = data.get('role')  
             
-            # Check if citizen exists
+            
             citizen = db.session.query(Citizen).filter_by(id=citizen_id).first()
             if not citizen:
                 return jsonify({"error": "Citizen does not exist"}), 404
                 
-            # Check if panchayat exists
+            
             panchayat = db.session.query(Panchayat).filter_by(id=panchayat_id).first()
             if not panchayat:
                 return jsonify({"error": "Panchayat does not exist"}), 404
             
-            # Check if citizen is already a member of any panchayat
+            
             existing_member = db.session.query(citizen_panchayat).filter_by(citizen_id=citizen_id).first()
             if existing_member:
                 return jsonify({"error": "Citizen is already a member of a panchayat"}), 400
             
-            # Create an insert statement for the association table
+            
             stmt = citizen_panchayat.insert().values(
                 citizen_id=citizen_id,
                 panchayat_id=panchayat_id,
@@ -536,10 +536,10 @@ def panchayat_member_routes(app):
     @app.route('/fetch_panchayat_members', methods=['GET'])
     def fetch_panchayat_members():
         try:
-            # Query the association table
+            
             result = db.session.query(citizen_panchayat).all()
             
-            # Convert result to list of dictionaries
+            
             members_list = [
                 {
                     'citizen_id': member.citizen_id,
@@ -562,17 +562,17 @@ def panchayat_member_routes(app):
             panchayat_id = data['panchayat_id']
             role = data.get('role')
             
-            # Check if the relationship exists
+            
             member = db.session.query(citizen_panchayat).filter_by(citizen_id=original_citizen_id).first()
             if not member:
                 return jsonify({"error": f"No panchayat membership found for citizen ID {original_citizen_id}"}), 404
             
-            # Check if panchayat exists
+            
             panchayat = db.session.query(Panchayat).filter_by(id=panchayat_id).first()
             if not panchayat:
                 return jsonify({"error": "Panchayat does not exist"}), 404
                 
-            # Update the relationship
+            
             db.session.execute(
                 citizen_panchayat.update()
                 .where(citizen_panchayat.c.citizen_id == original_citizen_id)
@@ -588,12 +588,12 @@ def panchayat_member_routes(app):
     @app.route('/delete_citizen_panchayat/<int:citizen_id>', methods=['DELETE'])
     def delete_citizen_panchayat(citizen_id):
         try:
-            # Check if the relationship exists
+            
             member = db.session.query(citizen_panchayat).filter_by(citizen_id=citizen_id).first()
             if not member:
                 return jsonify({"error": f"No panchayat membership found for citizen ID {citizen_id}"}), 404
             
-            # Delete the relationship
+            
             db.session.execute(
                 citizen_panchayat.delete().where(citizen_panchayat.c.citizen_id == citizen_id)
             )
@@ -607,15 +607,15 @@ def panchayat_member_routes(app):
     @app.route('/fetch_panchayat_members_by_panchayat/<int:panchayat_id>', methods=['GET'])
     def fetch_panchayat_members_by_panchayat(panchayat_id):
         try:
-            # Check if panchayat exists
+            
             panchayat = db.session.query(Panchayat).filter_by(id=panchayat_id).first()
             if not panchayat:
                 return jsonify({"error": "Panchayat does not exist"}), 404
                 
-            # Query the association table for specific panchayat
+            
             result = db.session.query(citizen_panchayat).filter_by(panchayat_id=panchayat_id).all()
             
-            # Convert result to list of dictionaries
+            
             members_list = [
                 {
                     'citizen_id': member.citizen_id,
@@ -625,7 +625,7 @@ def panchayat_member_routes(app):
                 for member in result
             ]
             
-            # Optionally, enrich with citizen data
+            
             enriched_list = []
             for member in members_list:
                 citizen = db.session.query(Citizen).filter_by(id=member['citizen_id']).first()
@@ -646,18 +646,18 @@ def panchayat_member_routes(app):
     @app.route('/fetch_member_by_citizen/<int:citizen_id>', methods=['GET'])
     def fetch_member_by_citizen(citizen_id):
         try:
-            # Check if citizen exists
+            
             citizen = db.session.query(Citizen).filter_by(id=citizen_id).first()
             if not citizen:
                 return jsonify({"error": "Citizen does not exist"}), 404
                 
-            # Query the association table for specific citizen
+            
             member = db.session.query(citizen_panchayat).filter_by(citizen_id=citizen_id).first()
             
             if not member:
                 return jsonify({"error": "Citizen is not a member of any panchayat"}), 404
                 
-            # Get panchayat details
+            
             panchayat = db.session.query(Panchayat).filter_by(id=member.panchayat_id).first()
             
             result = {
@@ -679,13 +679,13 @@ def panchayat_member_routes(app):
             
             citizen_id = db.session.query(CitizenUser).filter_by(user_id=user_id).first().citizen_id
             print(citizen_id)
-            # Query the association table for specific citizen
+            
             member = db.session.query(citizen_panchayat).filter_by(citizen_id=citizen_id).first()
             print(member)
             if not member:
                 return jsonify({"error": "Citizen is not a member of any panchayat"}), 404
                 
-            # Get panchayat details
+            
             panchayat = db.session.query(Panchayat).filter_by(id=member.panchayat_id).first()
             
             result = {
@@ -706,13 +706,13 @@ def panchayat_member_routes(app):
             
             citizen_id = db.session.query(CitizenUser).filter_by(user_id=user_id).first().citizen_id
             print(citizen_id)
-            # Query the association table for specific citizen
+            
             member = db.session.query(citizen_lives_in_panchayat).filter_by(citizen_id=citizen_id).first()
             print(member)
             if not member:
                 return jsonify({"error": "Citizen is not a resident of any panchayat"}), 404
                 
-            # Get panchayat details
+            
             panchayat = db.session.query(Panchayat).filter_by(id=member.panchayat_id).first()
             
             result = {
@@ -788,7 +788,7 @@ def scheme_routes(app):
     @app.route('/fetch_schemes', methods=['GET'])
     def fetch_schemes():
         try:
-            # Join Scheme with GovernmentMonitor to include government monitor details
+            
             result = (
                 db.session.query(Scheme, GovernmentMonitor)
                 .join(GovernmentMonitor, Scheme.gov_id == GovernmentMonitor.id)
@@ -958,9 +958,9 @@ def asset_routes(app):
                 {
                     'asset_id': asset.id,
                     'asset_name': asset.name,
-                    'asset_address': asset.address,  # Assumed to be a JSON object with keys like street, city, state
+                    'asset_address': asset.address,  
                     'asset_value': asset.value,
-                    'asset_date': asset.acquisition_date.isoformat(),  # Convert date to string
+                    'asset_date': asset.acquisition_date.isoformat(),  
                     'panchayat_id': panchayat.id,
                     'panchayat_name': panchayat.name
                 }
@@ -975,8 +975,8 @@ def asset_routes(app):
     def add_asset():
         try:
             data = request.get_json()
-            # Parse the date if needed (assumes ISO format)
-            # acq_date = datetime.fromisoformat(data.get("asset_date"))
+            
+            
             new_asset = Asset(
                 name=data.get("asset_name"),
                 address=data.get("asset_address"),
@@ -1012,7 +1012,7 @@ def asset_routes(app):
             asset.name = data.get("asset_name", asset.name)
             asset.address = data.get("asset_address", asset.address)
             asset.value = data.get("asset_value", asset.value)
-            # Update acquisition_date if provided
+            
             if data.get("asset_date"):
                 asset.acquisition_date = data.get("asset_date")
             asset.panchayat_id = data.get("panchayat_id", asset.panchayat_id)
@@ -1051,18 +1051,18 @@ def family_member_routes(app):
     @app.route('/fetch_family_member', methods=['GET'])
     def fetch_family_member_data():
         try:
-            # Create explicit aliases for Citizen table
-            citizen1 = aliased(Citizen)  # Represents the main citizen
-            citizen2 = aliased(Citizen)  # Represents the family member
+            
+            citizen1 = aliased(Citizen)  
+            citizen2 = aliased(Citizen)  
 
-            # Query all family relationships
+            
             result = db.session.query(
                 family_member.c.citizen_id_first,
                 citizen1.name.label('citizen_name'),
                 family_member.c.citizen_id_second,
                 citizen2.name.label('family_member_name'),
                 family_member.c.relationship,
-                CitizenUser.user_id  # Include user_id from CitizenUser table
+                CitizenUser.user_id  
             ).join(
                 citizen1, family_member.c.citizen_id_first == citizen1.id
             ).join(
@@ -1070,7 +1070,7 @@ def family_member_routes(app):
             ).join(CitizenUser, citizen1.id == CitizenUser.citizen_id
             ).all()
 
-            # Convert result to JSON
+            
             data_list = [
                 {
                     'citizen_id': row.citizen_id_first,
@@ -1078,7 +1078,7 @@ def family_member_routes(app):
                     'family_member_id': row.citizen_id_second,
                     'family_member_name': row.family_member_name,
                     'relationship': row.relationship,
-                    "user_id": row.user_id  # Extract user_id from CitizenUser table
+                    "user_id": row.user_id  
                 }
                 for row in result
             ]
@@ -1114,7 +1114,7 @@ def service_routes(app):
         try:
             data = request.json
             
-            # Validate required fields
+            
             if not all(key in data for key in ['citizen_id', 'family_member_id', 'relationship']):
                 return jsonify({'error': 'Missing required fields'}), 400
             
@@ -1122,14 +1122,14 @@ def service_routes(app):
             family_member_id = int(data['family_member_id'])
             relationship = data['relationship']
             
-            # Check if both citizens exist
+            
             citizen = db.session.query(Citizen).get(citizen_id)
             family_member_citizen = db.session.query(Citizen).get(family_member_id)
             
             if not citizen or not family_member_citizen:
                 return jsonify({'error': 'One or both citizens do not exist'}), 404
             
-            # Check if relationship already exists
+            
             existing = db.session.query(family_member).filter(
                 family_member.c.citizen_id_first == citizen_id,
                 family_member.c.citizen_id_second == family_member_id
@@ -1138,7 +1138,7 @@ def service_routes(app):
             if existing:
                 return jsonify({'error': 'This relationship already exists'}), 400
             
-            # Insert the new relationship
+            
             stmt = family_member.insert().values(
                 citizen_id_first=citizen_id,
                 citizen_id_second=family_member_id,
@@ -1146,8 +1146,8 @@ def service_routes(app):
             )
             db.session.execute(stmt)
             
-            # Create reverse relationship (if not already exists)
-            # Define mapping of reverse relationships
+            
+            
             reverse_relationships = {
                 'Spouse': 'Spouse',
                 'Parent': 'Child',
@@ -1161,7 +1161,7 @@ def service_routes(app):
             
             reverse_relationship = reverse_relationships.get(relationship, 'Related')
             
-            # Check if reverse relationship exists
+            
             existing_reverse = db.session.query(family_member).filter(
                 family_member.c.citizen_id_first == family_member_id,
                 family_member.c.citizen_id_second == citizen_id
@@ -1177,7 +1177,7 @@ def service_routes(app):
             
             db.session.commit()
             
-            # Return the created relationship
+            
             response_data = {
                 'citizen_id': citizen_id,
                 'citizen_name': citizen.name,
@@ -1197,7 +1197,7 @@ def service_routes(app):
         try:
             data = request.json
             
-            # Validate required fields
+            
             if not all(key in data for key in ['citizen_id', 'family_member_id', 'relationship']):
                 return jsonify({'error': 'Missing required fields'}), 400
             
@@ -1205,14 +1205,14 @@ def service_routes(app):
             family_member_id = int(data['family_member_id'])
             relationship = data['relationship']
             
-            # Check if both citizens exist
+            
             citizen = db.session.query(Citizen).get(citizen_id)
             family_member_citizen = db.session.query(Citizen).get(family_member_id)
             
             if not citizen or not family_member_citizen:
                 return jsonify({'error': 'One or both citizens do not exist'}), 404
             
-            # Check if relationship exists
+            
             existing = db.session.query(family_member).filter(
                 family_member.c.citizen_id_first == citizen_id,
                 family_member.c.citizen_id_second == family_member_id
@@ -1221,7 +1221,7 @@ def service_routes(app):
             if not existing:
                 return jsonify({'error': 'This relationship does not exist'}), 404
             
-            # Update the relationship
+            
             stmt = family_member.update().where(
                 family_member.c.citizen_id_first == citizen_id,
                 family_member.c.citizen_id_second == family_member_id
@@ -1229,7 +1229,7 @@ def service_routes(app):
             
             db.session.execute(stmt)
             
-            # Define mapping of reverse relationships
+            
             reverse_relationships = {
                 'Spouse': 'Spouse',
                 'Parent': 'Child',
@@ -1243,7 +1243,7 @@ def service_routes(app):
             
             reverse_relationship = reverse_relationships.get(relationship, 'Related')
             
-            # Update the reverse relationship if it exists
+            
             reverse_stmt = family_member.update().where(
                 family_member.c.citizen_id_first == family_member_id,
                 family_member.c.citizen_id_second == citizen_id
@@ -1252,7 +1252,7 @@ def service_routes(app):
             db.session.execute(reverse_stmt)
             db.session.commit()
             
-            # Return the updated relationship
+            
             response_data = {
                 'citizen_id': citizen_id,
                 'citizen_name': citizen.name,
@@ -1272,21 +1272,21 @@ def service_routes(app):
         try:
             data = request.json
             
-            # Validate required fields
+            
             if not all(key in data for key in ['citizen_id', 'family_member_id']):
                 return jsonify({'error': 'Missing required fields'}), 400
             
             citizen_id = int(data['citizen_id'])
             family_member_id = int(data['family_member_id'])
             
-            # Delete the relationship
+            
             stmt = family_member.delete().where(
                 family_member.c.citizen_id_first == citizen_id,
                 family_member.c.citizen_id_second == family_member_id
             )
             result = db.session.execute(stmt)
             
-            # Also delete the reverse relationship
+            
             reverse_stmt = family_member.delete().where(
                 family_member.c.citizen_id_first == family_member_id,
                 family_member.c.citizen_id_second == citizen_id
@@ -1307,12 +1307,12 @@ def service_routes(app):
     @app.route('/fetch_family_members_by_citizen/<int:citizen_id>', methods=['GET'])
     def fetch_family_members_by_citizen(citizen_id):
         try:
-            # Fetch family members
+            
             family_members = db.session.query(Citizen, family_member.c.relationship).join(
                 family_member, Citizen.id == family_member.c.citizen_id_second
             ).filter(family_member.c.citizen_id_first == citizen_id).all()
             
-            # Convert results to JSON
+            
             data_list = [
                 {
                     'citizen_id': citizen.id,
@@ -1341,7 +1341,7 @@ def tax_route(app):
                 Panchayat, citizen_lives_in_panchayat.c.panchayat_id == Panchayat.id
             ).join(
                 GovernmentMonitor, Tax.monitoring_gov_id == GovernmentMonitor.id
-            ).all()  # The .all() method should be on the same line as the last join
+            ).all()  
 
             data_list = [
                 {
@@ -1456,7 +1456,7 @@ def government_monitors_routes(app):
     def add_government_monitor():
         data = request.get_json()
         try:
-            # Expecting "contact" as a list (the frontend converts comma-separated strings to lists)
+            
             new_monitor = GovernmentMonitor(
                 name=data.get('name'),
                 type=data.get('type'),
@@ -1529,7 +1529,7 @@ def services_route(app):
     @app.route('/fetch_services', methods=['GET'])
     def fetch_services():
         try:
-            # Join Service with Citizen and citizen_lives_in_panchayat to get citizen and panchayat details
+            
             result = (
                 db.session.query(Service, Citizen, Panchayat)
                 .join(Citizen, Service.availing_citizen_id == Citizen.id)
@@ -1607,7 +1607,7 @@ def services_route(app):
             db.session.add(new_service)
             db.session.commit()
 
-            # Retrieve citizen details
+            
             citizen = Citizen.query.get(new_service.availing_citizen_id)
             service_data = {
                 'service_id': new_service.id,

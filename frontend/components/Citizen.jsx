@@ -59,7 +59,6 @@ export default function Citizen() {
   }, [visitorrole]);
 
   useEffect(() => {
-    // Fetch data from the backend API endpoint
     fetch("http://localhost:5000/fetch_citizen_data")
       .then((res) => res.json())
       .then((data) => {
@@ -84,7 +83,6 @@ export default function Citizen() {
   }, []);
 
   useEffect(() => {
-    // Fetch data from the backend API endpoint
     fetch("http://localhost:5000/fetch_citizen_data")
       .then((res) => res.json())
       .then((data) => {
@@ -120,7 +118,6 @@ export default function Citizen() {
         panchayat_id: visitorpanchayat,
       });
     } else {
-      // Reset form for adding new data
       setNewCitizen({
         id: null,
         name: "",
@@ -191,7 +188,6 @@ export default function Citizen() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validate form fields
     if (!validateForm()) return;
 
     const endpoint = isEditMode
@@ -200,7 +196,6 @@ export default function Citizen() {
 
     const method = isEditMode ? "PUT" : "POST";
 
-    // Send data to backend
     fetch(endpoint, {
       method: method,
       headers: {
@@ -211,7 +206,6 @@ export default function Citizen() {
       .then((res) => res.json())
       .then((data) => {
         if (isEditMode) {
-          // Update the local state with the updated data
           setCitizenData(
             citizendata.map((item) =>
               item.id === newCitizen.id ? data.data : item
@@ -219,7 +213,6 @@ export default function Citizen() {
           );
           toast.success("Citizen data updated successfully!");
         } else {
-          // Update the local state with the new data
           setCitizenData([...citizendata, data.data]);
           toast.success("Citizen data added successfully!");
         }
@@ -254,7 +247,6 @@ export default function Citizen() {
     }
   };
 
-  // Filter data based on search query
   const handleSearch = () => {
     setFlag(false);
     let tempmap = {
@@ -357,7 +349,6 @@ export default function Citizen() {
                 </thead>
                 <tbody>
                   {Object.entries(edumap).map(([qualification, count]) => {
-                    // If flag is true, divide the count by 2
                     const finalCount = flag ? count / 2 : count;
 
                     return (
